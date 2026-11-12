@@ -13,6 +13,19 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/ar
 
 ## [Unreleased]
 
+## [1.30.1] — 2026-11-12
+
+### Fixed
+
+- **A touch scroll that starts on the waveform no longer seeks.** When a touch
+  turned into a page scroll the browser fired `pointercancel`, which shared the
+  `pointerup` handler and committed a seek — to 0:00 in Chromium, which reports
+  `clientX` 0 on a cancel. A cancelled scrub is now abandoned: no seek, and the
+  playhead and time readout return to where they were (WCAG 2.5.2 Pointer
+  Cancellation). The canvas also sets `touch-action: pan-y`, so vertical swipes
+  scroll the page and horizontal drags scrub
+  ([#31](https://github.com/arraypress/waveform-player/issues/31)).
+
 ## [1.30.0] — 2026-10-21
 
 ### Fixed
