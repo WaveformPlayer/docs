@@ -44,7 +44,7 @@ export default defineConfig({
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/WaveformPlayer/waveform-player' },
 			],
 			editLink: {
-				baseUrl: 'https://github.com/WaveformPlayer/waveform-docs/edit/main/',
+				baseUrl: 'https://github.com/WaveformPlayer/docs/edit/main/',
 			},
 			customCss: ['./src/styles/custom.css'],
 			components: {

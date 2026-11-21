@@ -1,4 +1,4 @@
-# CLAUDE.md — waveform-docs
+# CLAUDE.md — docs
 
 Astro + Starlight documentation site for the `@arraypress` waveform family
 (docs.waveformplayer.com). Private; deploys to Cloudflare on push to `main`.
