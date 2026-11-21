@@ -2,10 +2,10 @@
 
 The documentation site for the [`@arraypress`](https://github.com/arraypress)
 waveform family — a small, zero-dependency set of vanilla-JS audio components:
-a canvas [waveform player](https://github.com/arraypress/waveform-player), a
-persistent bottom [bar](https://github.com/arraypress/waveform-bar),
-[playlists](https://github.com/arraypress/waveform-playlist), listen
-[analytics](https://github.com/arraypress/waveform-tracker), and build-time peak
+a canvas [waveform player](https://github.com/WaveformPlayer/waveform-player), a
+persistent bottom [bar](https://github.com/WaveformPlayer/waveform-bar),
+[playlists](https://github.com/WaveformPlayer/waveform-playlist), listen
+[analytics](https://github.com/WaveformPlayer/waveform-tracker), and build-time peak
 tooling.
 
 Built with [Astro](https://astro.build) + [Starlight](https://starlight.astro.build),

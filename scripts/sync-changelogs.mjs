@@ -52,7 +52,7 @@ const frontmatter = ({ title, description, order }) =>
 // `repo` is the bare GitHub repo name (e.g. `waveform-player`); the npm package
 // is the scoped `@arraypress/<repo>`.
 const sourceNote = (repo) =>
-	`:::note\nGenerated from [\`@arraypress/${repo}\`'s CHANGELOG](https://github.com/arraypress/${repo}/blob/main/CHANGELOG.md). Run \`npm run sync:changelogs\` after a release to refresh.\n:::`;
+	`:::note\nGenerated from [\`@arraypress/${repo}\`'s CHANGELOG](https://github.com/WaveformPlayer/${repo}/blob/main/CHANGELOG.md). Run \`npm run sync:changelogs\` after a release to refresh.\n:::`;
 
 function write(slug, contents) {
 	mkdirSync(OUT_DIR, { recursive: true });

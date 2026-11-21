@@ -39,10 +39,10 @@ export default defineConfig({
 			description:
 				'Documentation for the @arraypress waveform family — a small, zero-dependency set of vanilla-JS audio components: a canvas waveform player, a persistent bottom bar, playlists, a searchable sound list, listen analytics, and build-time peak tooling.',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/arraypress/waveform-player' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/WaveformPlayer/waveform-player' },
 			],
 			editLink: {
-				baseUrl: 'https://github.com/arraypress/waveform-docs/edit/main/',
+				baseUrl: 'https://github.com/WaveformPlayer/waveform-docs/edit/main/',
 			},
 			customCss: ['./src/styles/custom.css'],
 			components: {
