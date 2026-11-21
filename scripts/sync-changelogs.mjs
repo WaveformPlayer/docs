@@ -67,8 +67,8 @@ const SINGLE = [
 	{ slug: 'playlist', pkg: 'waveform-playlist', title: 'Playlist', order: 3, description: 'Release history for @arraypress/waveform-playlist.' },
 	{
 		slug: 'sounds', pkg: 'waveform-sounds', title: 'Sounds', order: 4, description: 'Release history for @arraypress/waveform-sounds.',
-		// Its four wrappers live on the combined frameworks page, like every other wrapper.
-		see: 'The Astro, React, Svelte and Vue wrappers (`@arraypress/waveform-sounds-astro`, `-react`, `-svelte`, `-vue`) version separately — see [Framework wrappers](/changelog/frameworks/#arraypresswaveform-sounds-astro).',
+		// Its components live on the framework packages page, like every other component.
+		see: 'The Astro, React, Svelte and Vue components are the `/sounds` sub-path of each framework package and version with it — see [Framework packages](/changelog/frameworks/). Before 2.0 they were separate wrappers — see [Framework wrappers (1.x)](/changelog/frameworks-1x/#arraypresswaveform-sounds-astro).',
 	},
 	{ slug: 'gen', pkg: 'waveform-gen', title: 'Generator', order: 5, description: 'Release history for @arraypress/waveform-gen.' },
 	{ slug: 'tracker', pkg: 'waveform-tracker', title: 'Tracker', order: 6, description: 'Release history for @arraypress/waveform-tracker.' },
@@ -83,7 +83,35 @@ for (const { slug, pkg, title, order, description, see } of SINGLE) {
 	write(slug, [frontmatter({ title, description, order }), GENERATED, '', sourceNote(pkg), '', ...(see ? [see, ''] : []), entries(md)].join('\n'));
 }
 
-// ── Combined "Frameworks & wrappers" page ───────────────────────────────────
+// ── Framework packages (2.0+): one repo per framework ──────────────────────
+// `dir` is the sibling repo; each publishes `@arraypress/waveform-<dir>` with
+// /player /bar /playlist /sounds sub-paths.
+const FRAMEWORKS = ['react', 'vue', 'svelte', 'astro'];
+
+const frameworkSections = FRAMEWORKS.map((dir) => {
+	const md = read(dir);
+	if (!md) {
+		console.warn(`  ⚠ ${dir}/CHANGELOG.md not found — omitting from frameworks page.`);
+		return null;
+	}
+	return `## \`@arraypress/waveform-${dir}\`\n\n${demote(entries(md), 1)}`;
+}).filter(Boolean);
+
+if (frameworkSections.length) {
+	write('frameworks', [
+		frontmatter({ title: 'Framework packages', description: 'Release history for @arraypress/waveform-react, -vue, -svelte and -astro.', order: 7 }),
+		GENERATED,
+		'',
+		':::note\nGenerated from each framework package\'s CHANGELOG. Run `npm run sync:changelogs` after a release to refresh.\n:::',
+		'',
+		'One package per framework since 2.0, each with `/player`, `/bar`, `/playlist` and `/sounds` sub-paths. The sixteen single-component packages they replace are on [Framework wrappers (1.x)](/changelog/frameworks-1x/).',
+		'',
+		frameworkSections.join('\n\n'),
+	].join('\n'));
+}
+
+// ── Historical "Framework wrappers (1.x)" page ──────────────────────────────
+// The sixteen single-component wrappers, deprecated by the packages above.
 const WRAPPERS = [
 	'waveform-player-astro',
 	'waveform-player-react',
@@ -114,13 +142,13 @@ const sections = WRAPPERS.map((pkg) => {
 }).filter(Boolean);
 
 if (sections.length) {
-	write('frameworks', [
-		frontmatter({ title: 'Framework wrappers', description: 'Release history for the Astro, React, Vue and Svelte wrapper packages.', order: 7 }),
+	write('frameworks-1x', [
+		frontmatter({ title: 'Framework wrappers (1.x)', description: 'Release history for the sixteen 1.x Astro, React, Vue and Svelte wrapper packages, replaced in 2.0.', order: 8 }),
 		GENERATED,
 		'',
 		':::note\nGenerated from each wrapper package\'s CHANGELOG. Run `npm run sync:changelogs` after a release to refresh.\n:::',
 		'',
-		'The thin framework wrappers version independently of the core libraries they wrap.',
+		'These single-component wrappers served the 1.x cores and are deprecated. In 2.0 they are replaced by one package per framework — see [Framework packages](/changelog/frameworks/) and [Migrating from 1.x](/getting-started/migrating-from-1x/#package-names).',
 		'',
 		sections.join('\n\n'),
 	].join('\n'));

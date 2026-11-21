@@ -13,6 +13,139 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
 
 ## [Unreleased]
 
+## [2.0.0] — Unreleased
+
+### Added
+
+- **`duration` option** (`data-duration`, seconds). A track length the page
+  already knows, used until the audio's own metadata arrives — which with
+  `preload: 'none'` is only once playback starts. Meanwhile the time readout
+  shows it as the total, markers are placed against it, and the hover time,
+  the accessible seek slider and the Media Session scrubber use it. Seeking in
+  that window (a click, a key, a marker, `seekTo()` / `seekToPercent()`) moves
+  the playhead at once and lands on the audio as soon as it can seek. The real
+  duration replaces it once known. Per-track: `loadTrack()` resets it unless
+  the call supplies one. In external mode it stands in until the controller's
+  first `setProgress()`.
+- **Compact peaks.** Peaks may be given as `"wp1:"` followed by base64url (no
+  padding) of one byte per peak, `round(peak × 255)` — 2404 characters for
+  1800 peaks, about a quarter of a JSON array. Accepted wherever peaks are: the
+  `waveform` option, `data-waveform`, `setWaveformData()`, `loadTrack()` and a
+  `.json` sidecar (as its `peaks` field or the whole file). A malformed string
+  is unusable peaks, never an error. `WaveformPlayer.utils.encodeCompactPeaks()`
+  and `decodeCompactPeaks()` convert; `@arraypress/waveform-gen` writes the
+  same format.
+- **`lazy` option** (`data-lazy`). The player is built at once — registered,
+  its methods working — but assigning the audio source, fetching peaks,
+  decoding and drawing wait until it comes within 200px of the viewport, using
+  one IntersectionObserver shared by every lazy player. Playing, seeking,
+  `load()` or `loadTrack()` loads it straight away. Until then it shows the
+  title and loading state at its full height, so nothing shifts.
+- **Standard events.** `WaveformPlayer` now extends `EventTarget`, so
+  `player.addEventListener('play', …)` works and is typed. Every moment that
+  has a callback — `load`, `play`, `pause`, `ended`, `error`, `timeupdate`,
+  `next`, `previous` — plus `seek`, `ratechange` and `volumechange` is
+  dispatched as a plain event on the player and as a bubbling, composed
+  `waveformplayer:<name>` CustomEvent on its container whose `detail` carries
+  the player and the data, so one listener on `document` hears every player,
+  including those in shadow roots. The `waveformplayer:*` events are typed on
+  `HTMLElementEventMap` / `DocumentEventMap`. The callbacks run exactly as
+  before. The instance's `timeupdate` keeps the media element's rate (about
+  4Hz); the container's `waveformplayer:timeupdate` still fires every animation
+  frame while playing, as in 1.x. `seek`, `ratechange` and `volumechange` come
+  from the player's own `<audio>`, so they don't fire in external mode.
+- **Looping.** `loop` (`data-loop`) loops the whole track through the audio
+  element's own `loop`, so the wrap is seamless and `ended` / `onEnd` don't
+  fire on it (the wrap is a seek to 0, so `seek` fires). `setLoop(start, end)`
+  loops a section, `loopMarker(index)` loops from a marker to the next one (or
+  the end), `clearLoop()` stops, and `toggleLoop()` flips looping on or off.
+  `showLoop` (`data-show-loop`) adds a loop toggle button with `aria-pressed`,
+  named by `loopLabel`. Each change fires `loop` / `waveformplayer:loop`.
+  Self mode only; external mode ignores all of it.
+- **Volume controls.** `showVolume` (`data-show-volume`) adds a mute toggle
+  (`aria-pressed`, `muteLabel`) and a 0..1 volume slider (`volumeLabel`,
+  spoken as a percentage), which follow `setVolume()`, the `m` key and any
+  other change to the audio. Where scripted volume is ignored (iOS) the slider
+  is hidden and mute stays. `volume` (`data-volume`, 0..1) sets the initial
+  volume, and `getVolume()` / `setMuted()` join `setVolume()`. Self mode only.
+- **Download link.** `showDownload` (`data-show-download`) adds an
+  `<a download>` named by `downloadLabel`, for `downloadUrl`
+  (`data-download-url`, default: the track url) saved as `downloadName`
+  (`data-download-name`, default: the url's file name). It follows the track
+  through `loadTrack()`. Browsers ignore `download` for cross-origin URLs
+  unless the server sends `Content-Disposition: attachment`, and navigate to
+  the file instead.
+- **`<waveform-player>` custom element.** `<waveform-player src="track.mp3"
+  duration="187" waveform-style="bars">` takes every `data-*` option as an
+  attribute, with or without the `data-` prefix (the plain form wins; `style`
+  only as `data-style`, since plain `style` is CSS, and a bare boolean such as
+  `loop` means true). It renders in light DOM, so the stylesheet applies and
+  server-rendered markup upgrades in place, and `waveformplayer:*` events
+  bubble from the tag. `.player` is the instance; `play()`, `pause()` and
+  `togglePlay()` forward to it. Changing `src`, `url`, `title`, `artist`,
+  `artwork`, `waveform` or `duration` loads the new track; any other option
+  attribute rebuilds the player. Removing the element destroys its player,
+  but moving it does not. The default bundle registers it (unless the page
+  sets `data-waveform-autoinit="false"`); `/no-autoinit` exports
+  `defineWaveformPlayerElement(name?)` instead. The stylesheet makes the
+  element a block and gives it a default player's height before it is defined
+  (`--wfp-element-height`, 90px), so it doesn't shift the page as it upgrades.
+
+### Changed
+
+- **External-mode play/pause/seek requests carry the track's `duration`**
+  (`detail.duration`, null when unset), so a controller such as waveform-bar
+  can show the length before the audio loads.
+- **A bare jsDelivr URL serves the script-tag build.** `package.json` gains a
+  `jsdelivr` field (`dist/waveform-player.min.js`) beside `unpkg`; without it
+  jsDelivr would serve the ES module build, which can't run from a `<script>`.
+- **Written in TypeScript.** The type declarations are now generated from the
+  source instead of being written by hand, so they can no longer drift from
+  the code.
+- **Browser support is Chrome/Edge 111+, Firefox 114+ and Safari 16.4+** (all
+  from early 2023), up from Chrome 80, Firefox 75 and Safari 14.1. The bundles
+  are built for ES2022 and the minified bundle is about 150 bytes smaller
+  gzipped.
+- **The script-tag and CommonJS builds run in strict mode.** They now start
+  with `"use strict"`. The ES module build always ran strict, as every ES
+  module does, so this is the same code under the same rules it already
+  ran with there.
+
+### Fixed
+
+- **One copy of the player when both entry points are imported.** An app that
+  imported the root (as waveform-bar, -playlist and -sounds users do) and
+  `/no-autoinit` (as the framework components do) bundled the whole player
+  twice: two classes, two instance registries, so `singlePlay` and
+  `WaveformPlayer.instances` didn't see each other's players. The two ES module
+  entries are now built together and share `waveform-player-shared.esm.js`.
+- **A small `height` is respected on phones.** Below 480px the stylesheet still
+  gave the waveform a 50px minimum, so a `height: 32` player (like the slim
+  waveform in waveform-bar) rendered 50px tall with its canvas stretched. The
+  1.x fix removed this floor everywhere except that phone-width rule.
+- **Smooth progress when playback starts before the audio's metadata.** With
+  `preload: 'none'`, pressing play before the file's metadata had loaded left
+  the progress bar on the browser's ~4 updates a second for the whole track:
+  the animation-frame loop found no duration and stopped. It now restarts when
+  the metadata arrives.
+
+### Removed
+
+- **The CommonJS builds** (`waveform-player.cjs` and
+  `waveform-player-no-autoinit.cjs`) and the `require` export conditions.
+  `require('@arraypress/waveform-player')` still works: Node 22.12+ loads the
+  ES module build through `require()`, and `engines` now says `>=22.12`. The
+  `module` field is gone too; `exports` covers every current bundler.
+- **The `data-color` and `data-theme` attributes.** They were 1.x aliases. Use
+  `data-waveform-color` and `data-color-preset`.
+- **The `webkitAudioContext` fallback** for BPM detection. Every supported
+  browser has `AudioContext`.
+- **The square-bar fallback for browsers without `roundRect`.** Every supported
+  browser has it, so `barRadius` always rounds.
+- **The singular style names `bar`, `block` and `dot`** in the drawing table.
+  They were unreachable: option checking only accepts `bars`, `blocks` and
+  `dots`, so an unknown name already fell back to the default style.
+
 ## [1.30.2] — 2026-11-21
 
 ### Fixed

@@ -13,6 +13,51 @@ Generated from [`@arraypress/waveform-gen`'s CHANGELOG](https://github.com/Wavef
 
 ## [Unreleased]
 
+## [3.0.0] — Unreleased
+
+Released alongside WaveformPlayer 2.0. A major version because the Node
+floor rises to 22.12.
+
+### Added
+
+- **`--compact`** writes `peaks` as one `wp1:` string instead of a number
+  array — the format WaveformPlayer 2.0's `data-waveform` reads — and adds
+  `duration` (seconds, 2 places) to each JSON file, after the other keys.
+  1800 peaks are 2,404 characters: a typical per-file JSON goes from ~17.7 KB
+  to ~2.4 KB. Works with `--output`, the default next-to-the-audio JSON,
+  `--format inline` (strings in place of arrays) and alongside `--manifest`
+  (whose `peaks` stay the hex waveform-sounds reads). Without the flag every
+  output is byte-for-byte what it was.
+  - Format: `"wp1:"` + base64url (RFC 4648 §5, no padding) of one byte per
+    peak, `byte = round(clamp(peak, 0, 1) × 255)`, quantised from the
+    unrounded peaks, so `--precision` doesn't apply.
+- **`--html`** prints one `<div data-waveform-player data-url data-waveform
+  data-duration data-preload="none" data-title>` per file, attributes
+  HTML-escaped, in path order, so a page shows waveforms and lengths without
+  loading any audio until play. URLs follow `--root` and `--base-url`; the
+  title is the file name as the manifest reads it. No JSON is written unless
+  `--output` asks for it; with `--manifest`, the manifest is written too and
+  each snippet uses its entry's `url` and `title`. Exits 2 with
+  `--format inline`.
+- **`encodeCompactPeaks(peaks)`, `decodeCompactPeaks(string)` and
+  `COMPACT_PEAKS_PREFIX`** in the library. Decoding returns byte / 255 and
+  throws on a missing `wp1:` prefix, a character outside base64url
+  (padding included), or a truncated string.
+- **TypeScript declarations** for the library (`dist/lib/index.d.ts`, the
+  `types` condition of the `.` export), generated from the source.
+
+### Changed
+
+- **Written in TypeScript**, compiled by `tsc` to `dist/` (`dist/lib/` for the
+  library, `dist/bin/waveform-gen.js` for the CLI), which is what the package
+  ships in place of the hand-written `lib/` and `bin/`. Same behaviour: every
+  default output is byte-for-byte what it was. Only the `.` export is
+  importable, as before; `src/` is not shipped.
+- **Node 22.12 or later** (`engines.node` `>=22.12`, up from `>=18`), the
+  same floor as the rest of the WaveformPlayer family. The package is ES
+  modules only, as it always was, and on 22.12+ `require()` loads it too:
+  `const { generatePeaks } = require('@arraypress/waveform-gen')`.
+
 ## [2.2.0] — 2026-10-07
 
 ### Added

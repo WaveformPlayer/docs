@@ -15,7 +15,8 @@ package's own `CHANGELOG.md`.
 - **[Sounds](/changelog/sounds/)** — `@arraypress/waveform-sounds`, the searchable, filterable sound list.
 - **[Generator](/changelog/gen/)** — `@arraypress/waveform-gen`, offline peak generation.
 - **[Tracker](/changelog/tracker/)** — `@arraypress/waveform-tracker`, listen analytics.
-- **[Framework wrappers](/changelog/frameworks/)** — the Astro, React, Vue and Svelte wrappers.
+- **[Framework packages](/changelog/frameworks/)** — `@arraypress/waveform-react`, `-vue`, `-svelte` and `-astro` (2.0+).
+- **[Framework wrappers (1.x)](/changelog/frameworks-1x/)** — the sixteen single-component wrappers they replaced.
 
 All packages follow [Keep a Changelog](https://keepachangelog.com/) and
 [Semantic Versioning](https://semver.org/).
