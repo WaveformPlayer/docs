@@ -13,7 +13,7 @@ Generated from [`@arraypress/waveform-gen`'s CHANGELOG](https://github.com/Wavef
 
 ## [Unreleased]
 
-## [3.0.0] — Unreleased
+## [3.0.0] — 2026-11-21
 
 Released alongside WaveformPlayer 2.0. A major version because the Node
 floor rises to 22.12.

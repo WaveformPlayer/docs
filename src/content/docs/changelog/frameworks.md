@@ -15,7 +15,7 @@ One package per framework since 2.0, each with `/player`, `/bar`, `/playlist` an
 
 ## `@arraypress/waveform-react`
 
-### 2.0.0 — Unreleased
+### 2.0.0 — 2026-11-21
 
 The four React wrappers in one package, one sub-path per component, built
 for the 2.0 cores and React 19.3+:
@@ -106,7 +106,7 @@ path, installing the 2.0 cores and being on React 19.3+.
 
 ## `@arraypress/waveform-vue`
 
-### 2.0.0 — Unreleased
+### 2.0.0 — 2026-11-21
 
 One package replaces the four Vue wrappers, and it is built for the 2.0
 cores (`@arraypress/waveform-player`, `-bar`, `-playlist` and `-sounds`
@@ -208,7 +208,7 @@ its own core with `import()`, so you install only the cores you use.
 
 ## `@arraypress/waveform-svelte`
 
-### 2.0.0 — Unreleased
+### 2.0.0 — 2026-11-21
 
 The four Svelte wrappers are now one package, `@arraypress/waveform-svelte`,
 with one sub-path per component, built for the 2.0 cores.
@@ -303,7 +303,7 @@ install the ones for the sub-paths you import (`./player` needs only
 
 ## `@arraypress/waveform-astro`
 
-### 2.0.0 — Unreleased
+### 2.0.0 — 2026-11-21
 
 One package replaces the four 1.x-era Astro wrappers, and it is built for the
 2.0 cores (`@arraypress/waveform-player`, `-bar`, `-playlist` and `-sounds`

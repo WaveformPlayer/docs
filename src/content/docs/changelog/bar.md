@@ -13,7 +13,7 @@ Generated from [`@arraypress/waveform-bar`'s CHANGELOG](https://github.com/Wavef
 
 ## [Unreleased]
 
-## [2.0.0] — Unreleased
+## [2.0.0] — 2026-11-21
 
 Requires `@arraypress/waveform-player` 2.0.
 

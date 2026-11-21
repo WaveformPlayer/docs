@@ -13,7 +13,7 @@ Generated from [`@arraypress/waveform-tracker`'s CHANGELOG](https://github.com/W
 
 ## [Unreleased]
 
-## [2.0.0] — Unreleased
+## [2.0.0] — 2026-11-21
 
 ### Added
 

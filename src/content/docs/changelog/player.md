@@ -13,7 +13,7 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
 
 ## [Unreleased]
 
-## [2.0.0] — Unreleased
+## [2.0.0] — 2026-11-21
 
 ### Added
 
@@ -68,6 +68,8 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
   other change to the audio. Where scripted volume is ignored (iOS) the slider
   is hidden and mute stays. `volume` (`data-volume`, 0..1) sets the initial
   volume, and `getVolume()` / `setMuted()` join `setVolume()`. Self mode only.
+  At phone width (480px and below) the slider is hidden and the mute toggle
+  stays, so the title and time keep their room.
 - **Download link.** `showDownload` (`data-show-download`) adds an
   `<a download>` named by `downloadLabel`, for `downloadUrl`
   (`data-download-url`, default: the track url) saved as `downloadName`
