@@ -128,7 +128,7 @@ The fetched file is a single object. Only `peaks` is required:
 
 A bare top-level array (or, in 2.0, a bare `wp1:` string) is also accepted and treated as the peaks list, but the object form is preferred because it carries markers.
 
-WaveformGen's `--compact` also writes a `duration` field. The player does **not** read `duration` from a sidecar — by the time the sidecar is fetched the length is no longer needed up front. To show the length before the audio loads, pass the [`duration` option](/player/options/#source) (`data-duration`) in the markup.
+WaveformGen's `--compact` also writes a `duration` field. The player uses it as the [`duration` option](/player/options/#source) when none is set, so the total time shows as soon as the sidecar arrives — before any audio loads. A `duration` option (`data-duration`) in the markup still wins, and shows even before the sidecar is fetched.
 
 <Aside type="note">
   Before 1.28.0 the player ignored an embedded `bpm` field; surface it through the [`bpm` option](/player/data-attributes/#bpm) or `data-bpm` there. A `bpm` option shows even when peaks are pre-supplied, and always wins over the sidecar and auto-detection.

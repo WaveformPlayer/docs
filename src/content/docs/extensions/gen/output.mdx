@@ -38,7 +38,7 @@ With `--compact`, `peaks` is one [`wp1:` string](/player/waveform-data/#compact-
 }
 ```
 
-The peaks are quantised from the unrounded values, so `--precision` doesn't apply. WaveformPlayer reads these peaks wherever it reads a sidecar; it does not read the sidecar's `duration` — put that in the markup as `data-duration` (or use [`--html`](/extensions/gen/#flags), which does).
+The peaks are quantised from the unrounded values, so `--precision` doesn't apply. WaveformPlayer reads these peaks wherever it reads a sidecar, and its `duration` stands in as the player's [`duration` option](/player/options/#source) when the markup sets none, so the length shows before the audio loads.
 
 ### How peaks are computed
 

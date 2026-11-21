@@ -76,9 +76,10 @@ You don't have to write those attributes by hand. [WaveformGen](/extensions/gen/
 </Steps>
 
 Rather keep JSON sidecars? `--compact` writes `{ "peaks": "wp1:…", "duration": 122 }`
-files (about 2.4 KB each instead of ~18 KB). The player reads the peaks from a
-sidecar but not its `duration`, so put the length in the markup
-(`data-duration`) for it to show before play.
+files (about 2.4 KB each instead of ~18 KB). The player reads both the peaks
+and the `duration` from a sidecar, so the length shows as soon as the small JSON
+file arrives — still no audio until play. `data-duration` in the markup also
+works, and shows before the sidecar is fetched.
 
 ## In JavaScript and the frameworks
 
