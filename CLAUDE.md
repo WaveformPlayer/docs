@@ -12,7 +12,10 @@ Astro + Starlight documentation site for the `@arraypress` waveform family
 
 `src/content/docs/changelog/*.md` are written by `scripts/sync-changelogs.mjs`.
 **Never hand-edit them** — the next sync silently overwrites your changes.
-Each carries a `<!-- GENERATED … -->` marker.
+Each carries a `<!-- GENERATED … -->` marker. `changelog/frameworks.md` comes
+from the 2.0 framework repos (`react`, `vue`, `svelte`, `astro`);
+`changelog/frameworks-1x.md` from the sixteen deprecated 1.x wrapper repos.
+(`changelog/index.md` is hand-written.)
 
 The script reads each package's `CHANGELOG.md` from the sibling repos
 (`PKG_ROOT = ../`, i.e. `~/Developer/Javascript/waveform-player/`). It **warns and continues**
@@ -35,7 +38,10 @@ repo.** Keep it that way; don't "helpfully" pin a version into a snippet.
 - `src/content/docs/extensions/bar/configuration.mdx` — bar config.
 - `src/content/docs/extensions/playlist/options.mdx` — forwarded-options prose list.
 - `src/content/docs/frameworks/astro.mdx` — common-props table.
-- react/vue/svelte framework pages **enumerate nothing** and need no change.
+- react/vue/svelte framework pages list the 2.0 player props in a "new in 2.0"
+  table; a new player option needs a row there too.
+- A new 2.0-style feature also belongs in `getting-started/migrating-from-1x.mdx`'s
+  "What's new" table while 2.x is young.
 - `src/content/docs/extensions/sounds/options.mdx` — WaveformSounds' options (its own
   surface, `@arraypress/waveform-sounds`; a player option change doesn't touch it). A new
   sounds option needs a row there, in the "Defaults at a glance" block, in the Astro
