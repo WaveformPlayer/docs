@@ -8,7 +8,7 @@ import { Tabs, TabItem, Aside, Card, CardGrid, Steps } from '@astrojs/starlight/
 
 ## Library API
 
-The package's one entry (`@arraypress/waveform-gen`, ESM) exports `generatePeaks` and `roundPeaks`, plus — since 2.1.0 — the [sounds-manifest](#sounds-manifests) functions: `buildManifest`, `manifestEntry`, `isLoopPath` (2.2.0+), `createManifest`, `parseFilename`, `encodePeaks`, `resamplePeaks`, `fileUrl`, `naturalCompare`, `commonRoot`, `relativeTo`, and the constants `MANIFEST_VERSION` (`1`) and `DEFAULT_MANIFEST_BARS` (`64`). No typings ship with it.
+The package's one entry (`@arraypress/waveform-gen`, ESM) exports `generatePeaks` and `roundPeaks`, plus — since 2.1.0 — the [sounds-manifest](#sounds-manifests) functions: `buildManifest`, `manifestEntry`, `isLoopPath` (2.2.0+), `createManifest`, `parseFilename`, `encodePeaks`, `resamplePeaks`, `fileUrl`, `naturalCompare`, `commonRoot`, `relativeTo`, and the constants `MANIFEST_VERSION` (`1`) and `DEFAULT_MANIFEST_BARS` (`64`). Since 3.0.0 it also exports `encodeCompactPeaks`, `decodeCompactPeaks` and `COMPACT_PEAKS_PREFIX` (`'wp1:'`), and ships TypeScript declarations generated from its source (`GeneratePeaksOptions`, `PeaksResult` and the manifest types). On Node 22.12+ `require()` loads it too.
 
 ```javascript
 import { generatePeaks } from '@arraypress/waveform-gen';
@@ -108,6 +108,23 @@ const manifest = await buildManifest(files, { root: './public/previews', baseUrl
 | `naturalCompare(a, b)` | The path order: numeric, case-insensitive, folder by folder. |
 | `commonRoot(entries)` | The deepest folder containing every `{ path, isDir }` entry (a file counts as its folder); `null` when there is none. |
 | `relativeTo(root, file)` | A file's path under `root` with `/` separators; throws when it's outside. |
+
+### Compact peaks (3.0.0+)
+
+| Export | Description |
+|--------|-------------|
+| `encodeCompactPeaks(peaks)` | Peaks → `"wp1:"` + base64url (no padding) of one byte per peak, `round(clamp(peak, 0, 1) × 255)` — the [format WaveformPlayer 2.0 reads](/player/waveform-data/#compact-peaks-wp1). 1800 peaks → 2,404 characters. |
+| `decodeCompactPeaks(string)` | Back to peaks (each byte / 255). Throws on a missing `wp1:` prefix, a character outside base64url (padding included) or a truncated string — unlike the player's decoder, which returns `[]`. |
+| `COMPACT_PEAKS_PREFIX` | `'wp1:'`. |
+
+```js
+import { generatePeaks, encodeCompactPeaks } from '@arraypress/waveform-gen';
+
+const { peaks, duration } = await generatePeaks('./audio/track.mp3');
+const html = `<div data-waveform-player data-url="/audio/track.mp3"
+  data-waveform="${encodeCompactPeaks(peaks)}" data-duration="${duration.toFixed(2)}"
+  data-preload="none"></div>`;
+```
 
 ## Feeding the player
 

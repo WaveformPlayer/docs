@@ -22,7 +22,7 @@ The browser build is an IIFE that exposes `window.WaveformPlayer`, so it works a
 
 ### From a CDN
 
-The fastest path — point WordPress at jsDelivr or unpkg. These use `@latest` for the current release; pin an exact version (`@1.23.0`) instead for reproducible builds.
+The fastest path — point WordPress at jsDelivr or unpkg. These use `@latest` for the current release; pin an exact version (`@2.0.0`) instead for reproducible builds.
 
 ```php
 // functions.php (theme) or your plugin's main file
@@ -31,14 +31,14 @@ add_action( 'wp_enqueue_scripts', function () {
 		'waveform-player',
 		'https://cdn.jsdelivr.net/npm/@arraypress/waveform-player@latest/dist/waveform-player.css',
 		array(),
-		'1.14.0'
+		'2.0.0'
 	);
 
 	wp_enqueue_script(
 		'waveform-player',
 		'https://cdn.jsdelivr.net/npm/@arraypress/waveform-player@latest/dist/waveform-player.min.js',
 		array(),     // no dependencies
-		'1.14.0',
+		'2.0.0',
 		true         // load in the footer
 	);
 } );
@@ -94,14 +94,14 @@ add_action( 'wp_enqueue_scripts', function () {
 		'waveform-player',
 		get_theme_file_uri( 'assets/waveform-player.css' ),
 		array(),
-		'1.14.0'
+		'2.0.0'
 	);
 
 	wp_enqueue_script(
 		'waveform-player',
 		get_theme_file_uri( 'assets/waveform-player.min.js' ),
 		array(),
-		'1.14.0',
+		'2.0.0',
 		true
 	);
 } );
@@ -114,21 +114,21 @@ add_action( 'wp_enqueue_scripts', function () {
 		'waveform-player',
 		plugins_url( 'assets/waveform-player.css', __FILE__ ),
 		array(),
-		'1.14.0'
+		'2.0.0'
 	);
 
 	wp_enqueue_script(
 		'waveform-player',
 		plugins_url( 'assets/waveform-player.min.js', __FILE__ ),
 		array(),
-		'1.14.0',
+		'2.0.0',
 		true
 	);
 } );
 ```
 
 <Aside type="note">
-Use the package version as the enqueue `$ver` argument (here `'1.14.0'`). Bump it whenever you update the bundled files so WordPress busts the asset cache. For long-term caching you can use `filemtime()` on the local file instead.
+Use the package version as the enqueue `$ver` argument (here `'2.0.0'`). Bump it whenever you update the bundled files so WordPress busts the asset cache. For long-term caching you can use `filemtime()` on the local file instead.
 </Aside>
 
 ### Bundled into a block (`@wordpress/scripts`)
@@ -152,7 +152,7 @@ new WaveformPlayer( container );
 Constructing the container yourself has a second benefit: the player only ever reads `data-*` attributes you set, so nothing an author typed into post content can reach the option surface.
 
 <Aside type="note">
-This is how WordPress core does it. The Playlist block added in [7.1](/news/wordpress-7-1/) bundles the library and mounts its own containers rather than letting the page scan. Requires `@arraypress/waveform-player` 1.27.0 or newer — see [choosing an entry point](/player/data-attributes/#if-you-dont-control-the-page-either).
+This is how WordPress core does it. The Playlist block added in [7.1](/news/wordpress-7-1/) bundles the library and mounts its own containers rather than letting the page scan. It uses the `/no-autoinit` entry point — see [choosing an entry point](/player/data-attributes/#if-you-dont-control-the-page-either).
 </Aside>
 
 ## 2. Add a player to the page

@@ -141,7 +141,7 @@ Options merge in precedence order **defaults &lt; `data-*` &lt; constructor opti
 
 ## CDN providers
 
-The package publishes a minified IIFE bundle and a stylesheet. The examples use `@latest` so you always get the current release; pin an exact version (e.g. `@1.23.0`) instead when you need fully reproducible builds.
+The package publishes a minified IIFE bundle and a stylesheet. The examples use `@latest` so you always get the current release; pin an exact version (e.g. `@2.0.0`) instead when you need fully reproducible builds.
 
 <Tabs syncKey="cdn">
 
@@ -169,7 +169,7 @@ The package publishes a minified IIFE bundle and a stylesheet. The examples use 
 </Tabs>
 
 <Aside type="caution">
-For fully reproducible builds, pin an **exact** version (for example `@1.23.0`) instead of `@latest`. A floating tag means a CDN-cached update can change behaviour without a deploy on your side.
+For fully reproducible builds, pin an **exact** version (for example `@2.0.0`) instead of `@latest`. A floating tag means a CDN-cached update can change behaviour without a deploy on your side.
 </Aside>
 
 ### Files in `dist/`
@@ -179,10 +179,9 @@ For fully reproducible builds, pin an **exact** version (for example `@1.23.0`) 
 | `waveform-player.min.js` | Minified IIFE for `<script>` / CDN. Exposes `window.WaveformPlayer`. The package's `unpkg` default. |
 | `waveform-player.js` | Unminified IIFE (same global) — handy while debugging. |
 | `waveform-player.css` | Required stylesheet. Also exported as `@arraypress/waveform-player/styles.css`. |
-| `waveform-player.esm.js` | ES module build for bundlers / `import`. |
-| `waveform-player.cjs` | CommonJS build for `require`. |
+| `waveform-player.esm.js` | ES module build for bundlers / `import` (with `waveform-player-no-autoinit.esm.js`; both share `waveform-player-shared.esm.js`). |
 
-The ESM and CJS builds are for [bundler installs](/getting-started/installation/) — for plain HTML you want `waveform-player.min.js` plus the CSS.
+There is no CommonJS build in 2.0 — `require()` loads the ES module on Node 22.12+. The ES module builds are for [bundler installs](/getting-started/installation/) — for plain HTML you want `waveform-player.min.js` plus the CSS.
 
 ## Loading order with extensions
 

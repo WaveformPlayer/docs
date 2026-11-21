@@ -77,7 +77,7 @@ With the colours left unset, the canvas uses the [`--ws-wave-color` and `--ws-pr
 
 | Option | `data-*` | Type | Default | Description |
 | --- | --- | --- | --- | --- |
-| `playerOptions` | `data-player-options` (JSON) | `object \| null` | `null` | Options for the engine `WaveformPlayer` — colours, `height`, `waveformStyle`, `preload`, … — and its callbacks, which are called **after** the list's own, with the same arguments. Two things can't be overridden: `audioMode` is always `'self'`, and the list's own handlers always run. |
+| `playerOptions` | `data-player-options` (JSON) | `object \| null` | `null` | Options for the engine `WaveformPlayer` — colours, `height`, `waveformStyle`, `preload`, … — and its callbacks, which are called **after** the list's own, with the same arguments. See [what the list forces](#what-playeroptions-cant-change) below. |
 | `playerClass` | — | `typeof WaveformPlayer \| null` | `null` → `window.WaveformPlayer` | The `WaveformPlayer` class to build the engine from, for ESM setups without the global. |
 
 The engine's defaults, before `playerOptions` is applied:
@@ -96,6 +96,19 @@ new WaveformSounds('#pack', {
   playerOptions: { height: 64, waveformStyle: 'bars', onPlay: () => console.log('engine playing') },
 });
 ```
+
+### What `playerOptions` can't change
+
+The list depends on a few engine settings, so these are applied after `playerOptions` (2.0):
+
+| Engine option | In 2.0 | Why |
+| --- | --- | --- |
+| `audioMode` | always `'self'` | The list owns its audio. |
+| `loop`, `showLoop` | always off | The list owns looping (its Loop toggle repeats only sounds marked as loops). The player's own loop would stop `ended`, stalling `autoAdvance` and the row state, and its button would loop one-shots behind the list's back. |
+| `duration`, `downloadUrl`, `downloadName` | dropped | They describe one track. Each sound brings its own: a sound's `duration` reaches the engine (so the total time and the Media Session scrubber are right before the audio's metadata), and in the `strip` layout, with `playerOptions: { showDownload: true }`, the engine's download link is the sound's `download`, else its audio. |
+| `onPlay`, `onPause`, `onEnd`, `onTimeUpdate`, `onLoad`, `onError` | chained | The list's handler always runs; yours runs after it. |
+
+Everything else passes through — including the 2.0 `showVolume`, `volume`, `showDownload` and their labels. `lazy` is accepted but has no effect: the engine loads nothing until a sound plays.
 
 <Aside type="note" title="The engine is built when the list is ready">
 The engine `WaveformPlayer` is constructed once the list is built — no audio loads until something plays — when a player class is available then. Otherwise it's built on the first play. Either way there is exactly one per list, and it's destroyed with the list.

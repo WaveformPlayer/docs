@@ -27,6 +27,19 @@ In `json` format, each input file produces `<nameNoExt>.json` — next to the au
 | `bpm` | Only with `--bpm` **and** a detected tempo | `number` | Integer. Omitted entirely if detection returns `null`. |
 | `markers` | Only if a sidecar file exists | `{ time: number, label: string }[]` | `time` in seconds. Omitted if no markers parsed. |
 
+### `--compact` (3.0.0+)
+
+With `--compact`, `peaks` is one [`wp1:` string](/player/waveform-data/#compact-peaks-wp1) and a `duration` key (seconds, 2 places) is added after the other keys:
+
+```json
+{
+  "peaks": "wp1:AAAAAAAAAAAAAbxcUcRoU0I9ODAqIx8d…",
+  "duration": 122
+}
+```
+
+The peaks are quantised from the unrounded values, so `--precision` doesn't apply. WaveformPlayer reads these peaks wherever it reads a sidecar; it does not read the sidecar's `duration` — put that in the markup as `data-duration` (or use [`--html`](/extensions/gen/#flags), which does).
+
 ### How peaks are computed
 
 1. **Decode** the file (`audio-decode`) into channel data.

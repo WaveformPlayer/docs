@@ -170,7 +170,7 @@ const bassIn128 = sounds.filter((s) => WaveformSounds.utils.matches(s, { type: '
 
 ## Types
 
-The package ships hand-written typings (`index.d.ts`); the framework wrappers derive their props from them.
+The package ships TypeScript declarations generated from its source (2.0; 0.x shipped a hand-written `index.d.ts`). The `exports` map points each entry at its declarations, and the option types live in `types/types.d.ts`. The framework components derive their props from them.
 
 | Type | Shape |
 | --- | --- |

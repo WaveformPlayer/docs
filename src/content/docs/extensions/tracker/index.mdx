@@ -65,7 +65,7 @@ A larger jump isn't automatically a seek (1.1.0+). Browsers throttle hidden tabs
 
 ## Install
 
-WaveformTracker has a peer dependency on `@arraypress/waveform-player@^1.8.0`. Load and initialize the **player first** — it dispatches the events the tracker consumes — then load the tracker.
+WaveformTracker 2.0 has a peer dependency on `@arraypress/waveform-player@^2.0.0`. Load and initialize the **player first** — it dispatches the events the tracker consumes — then load the tracker. (For a 1.x player, stay on WaveformTracker 1.x.)
 
 <Tabs syncKey="pkg">
 
@@ -110,10 +110,12 @@ import WaveformTracker from '@arraypress/waveform-tracker';
 WaveformTracker.init({ endpoint: '/api/track' });
 ```
 
-From CommonJS, the singleton is the `default` export: `require('@arraypress/waveform-tracker').default` (1.1.0+ — earlier versions returned `{}`). The package's `exports` map sends `import` to the ESM build and `require` to the CJS build; `./dist/*`, `./src/*` and `./package.json` stay reachable for direct paths.
+The package is ES modules only (2.0). From CommonJS on Node 22.12+, `require()` loads the ES module build and the singleton is its `default` export: `require('@arraypress/waveform-tracker').default`. Besides the root, the `exports` map leaves `./dist/*` and `./package.json` reachable; the 1.x `./src/*` deep import is gone (`src/` ships only for the declaration maps).
+
+The package ships TypeScript declarations, generated from its source: `WaveformTrackerConfig`, `WaveformTrackerPayload`, `WaveformTrackerStats`, `WaveformTrackerPlayer` and friends are exported. The 2.0 core's `WaveformPlayer` fits `WaveformTrackerPlayer`.
 
 <Aside type="note" title="Script tags">
-  With the IIFE builds, load `waveform-player.js` before `waveform-tracker.js`. Both expose globals (`window.WaveformPlayer`, `window.WaveformTracker`), so you can call `WaveformTracker.init(...)` directly with no import. No TypeScript declarations are shipped.
+  With the IIFE builds, load `waveform-player.js` before `waveform-tracker.js`. Both expose globals (`window.WaveformPlayer`, `window.WaveformTracker`), so you can call `WaveformTracker.init(...)` directly with no import.
 </Aside>
 
 ## Attaching it to players
@@ -124,7 +126,7 @@ You don't attach the tracker to a player by hand. Calling `init()` does three th
 
 2. **Listens for new players.** It adds capturing-phase listeners for `waveformplayer:ready` on `document`, so any player created later (lazy-mounted, SPA route change) is tracked automatically.
 
-3. **Cleans up destroyed players.** It listens for `waveformplayer:destroy` and untracks the player, removing its listeners — this prevents the tracker's internal `Map` from leaking players (and their DOM) in single-page apps. Requires player **v1.8.0+**.
+3. **Cleans up destroyed players.** It listens for `waveformplayer:destroy` and untracks the player, removing its listeners — this prevents the tracker's internal `Map` from leaking players (and their DOM) in single-page apps.
 
 ```js
 // Call this as early as players may appear.

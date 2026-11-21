@@ -87,7 +87,7 @@ WaveformBar.init({ continuous: true });
 The default export is the singleton instance. If you need the class itself: `import { WaveformBar } from '@arraypress/waveform-bar'`.
 
 <Aside type="caution" title="Versions">
-`@arraypress/waveform-bar` 1.12.0+ declares a peer dependency of `@arraypress/waveform-player@^1.8.0` (earlier versions: `^1.7.2`) — external mode, `setProgress()`/`setPlayingState()` and `barRadius` all need 1.8.0. Keep the player at or above that range. The bar ships **no `.d.ts`** — typed wrappers (e.g. `waveform-bar-react` / `-astro`) hand-declare the config type.
+`@arraypress/waveform-bar` 2.0 needs `@arraypress/waveform-player` 2.0 (peer `^2.0.0`); for a 1.x player, stay on bar 1.x. The package is ES modules only (`require()` works on Node 22.12+), every documented `dist/` path still resolves, and deep imports outside `dist/` (such as `src/…`) don't. It ships TypeScript declarations generated from its source, including `Window.WaveformBar`.
 </Aside>
 
 ## Quick start

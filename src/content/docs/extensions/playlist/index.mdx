@@ -23,7 +23,7 @@ That's nothing but a `[data-waveform-playlist]` container wrapping one `[data-tr
 
 ## Install
 
-Install the playlist alongside the core player (the player is a peer dependency, `^1.24.5` from 1.8.0 — previously `^1.7.2`, which the playlist had long outgrown).
+Install the playlist alongside the core player. WaveformPlaylist 2.0 needs the 2.0 player (peer `^2.0.0`); for a 1.x player, stay on playlist 1.x. The package is ES modules only (`require()` works on Node 22.12+) and ships TypeScript declarations.
 
 <Tabs syncKey="pkg">
 
@@ -119,9 +119,11 @@ Set on each `[data-track]` element.
 | `data-artist` | No | Artist / description line (default empty). |
 | `data-artwork` | No | Artwork image URL. Renders `.wp-artwork-container` and enables the play-state overlay on the active row. |
 | `data-album` | No | Album name, passed to the player for the Media Session metadata. |
-| `data-duration` | No | **Display-only** duration string, e.g. `3:45`. It is never parsed — only shown when `showDuration` is on. |
+| `data-duration` | No | Track length: `3:45`, `1:02:03` or bare seconds (`225`). Shown when `showDuration` is on — bare seconds formatted as a clock (2.0; 1.x showed `225`), anything else as written. In 2.0 it also **reaches the player** as its [`duration` option](/player/options/#source), so the time readout, markers and seeks have a length before the audio's metadata loads. Parsed tracks gain `durationSeconds`. |
+| `data-download-url` | No | 2.0. This track's download link target (with `data-show-download="true"` on the playlist). Default: the track's own URL. |
+| `data-download-name` | No | 2.0. The file name suggested for this track's download. |
 | `data-markers` | No | JSON array of explicit waveform markers, e.g. `[{"time":30,"label":"Drop","color":"#f00"}]`. Explicit markers always take precedence over chapter-derived ones. |
-| `data-waveform` | No | Pre-computed peaks for this track (1.8.0+): a JSON array of peaks, or a `.json` peaks URL (e.g. from [`waveform-gen`](/extensions/gen/)) passed through for the player to fetch. Skips decoding the audio just to draw it. A malformed JSON array logs a warning and the track falls back to decoding. |
+| `data-waveform` | No | Pre-computed peaks for this track: a JSON array of peaks, a compact [`wp1:` string](/player/waveform-data/#compact-peaks-wp1) (2.0), or a `.json` peaks URL (e.g. from [`waveform-gen`](/extensions/gen/)) passed through for the player to fetch or decode. Skips decoding the audio just to draw it. A malformed JSON array logs a warning and the track falls back to decoding. |
 
 <Aside type="caution" title="data-markers must be valid JSON">
 `data-markers` must be a JSON array. Malformed JSON (or anything that isn't an array) logs a `[WaveformPlaylist] Invalid markers …` warning and that track simply gets no explicit markers; entries without a numeric `time` are dropped. The rest of the playlist still renders, but validate it server-side so the markers you meant actually show.

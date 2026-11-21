@@ -6,7 +6,7 @@ sidebar:
 ---
 import { Tabs, TabItem, Aside, Card, CardGrid, Steps } from '@astrojs/starlight/components';
 
-**WaveformGen** is a Node CLI and ESM library that decodes audio files and writes normalized waveform peak data as JSON. Pre-generating peaks at build time means the player renders instantly — no client-side audio decode, no fetch-and-analyze on page load.
+**WaveformGen** is a Node CLI and ESM library (with TypeScript declarations) that decodes audio files and writes normalized waveform peak data as JSON. Pre-generating peaks at build time means the player renders instantly — no client-side audio decode, no fetch-and-analyze on page load.
 
 The JSON it produces drops straight into the player's [`waveform`](/player/options/) option (or `data-waveform` / `data-wb-waveform` attributes), so the bars look identical to a live in-browser decode.
 
@@ -22,7 +22,15 @@ The JSON it produces drops straight into the player's [`waveform`](/player/optio
     `waveform-gen ./previews/ --recursive --manifest sounds.json` — one JSON for a whole pack, for [WaveformSounds](/extensions/sounds/) (2.1.0+). See [Sounds manifest](/extensions/gen/manifest/).
   </Card>
 
+  <Card title="Zero-bandwidth HTML" icon="seti:html">
+    `waveform-gen ./audio/*.mp3 --html --base-url /audio/` — one ready-to-paste player per file, with compact peaks and its length, that loads no audio until play (3.0.0+). See [Zero-bandwidth pages](/player/zero-bandwidth/).
+  </Card>
+
 </CardGrid>
+
+<Aside type="note" title="Upgrading to 3.0">
+WaveformGen 3.0.0 goes with WaveformPlayer 2.0 (the package name already had a 2.x line). It needs **Node 22.12+** (was 18+) and adds `--compact`, `--html` and TypeScript declarations. Every default output is byte-for-byte what 2.2.0 wrote, so existing build scripts keep working. The CLI and library are now compiled from TypeScript into `dist/`; only the package root was ever importable, so imports don't change.
+</Aside>
 
 <Aside type="caution" title="Upgrading to 2.0">
 2.0.0 makes the CLI stricter. Check your build scripts for:
@@ -85,7 +93,7 @@ Run it on demand with `npx`, install globally for a reusable `waveform-gen` comm
 
 </Tabs>
 
-**Requirements:** Node.js 18+, ESM only (`"type": "module"`). The only runtime dependency is `audio-decode`.
+**Requirements:** Node.js 22.12+ (3.0.0+; 2.x ran on 18+). ES modules only (`"type": "module"`), with TypeScript declarations; on 22.12+ `require('@arraypress/waveform-gen')` loads it too (Node 22 prints an `ExperimentalWarning` the first time). The only runtime dependency is `audio-decode`.
 
 ## CLI
 
@@ -108,6 +116,12 @@ waveform-gen song.mp3 --samples 400 --bpm
 # Print the peaks array to stdout for piping
 waveform-gen song.mp3 --format inline
 
+# Compact wp1: peaks plus duration in each JSON (3.0.0+)
+waveform-gen ./public/audio/*.mp3 --compact --output ./public/waveforms/
+
+# Print a zero-bandwidth player <div> per file (3.0.0+)
+waveform-gen ./public/audio/*.mp3 --html --base-url /audio/
+
 # One manifest for a whole pack (WaveformSounds, 2.1.0+)
 waveform-gen ./public/previews/ --recursive --manifest ./public/previews/sounds.json --base-url /previews/
 ```
@@ -124,19 +138,21 @@ WaveformGen does not expand globs itself — `./audio/*.mp3` is expanded by your
 | `--precision <n>` | `2` | integer | Decimal places each peak is rounded to. Must be an integer (negative = unrounded), or the run exits `1`. |
 | `--output <dir>` | _same dir as each input_ | path | Output directory. A file found inside a directory input keeps its path relative to that directory (`out/a/intro.json`), with folders created as needed; file arguments write straight into `<dir>` (2.0.0+). |
 | `--format <type>` | `json` | `json` \| `inline` | `json` writes a `<name>.json` file; `inline` prints peaks to stdout — a bare array for a single file argument, or one object keyed by path for several files or any directory (2.0.0+). Any other value exits `1`. |
+| `--compact` | `false` | flag | Write `peaks` as one [`wp1:` string](/player/waveform-data/#compact-peaks-wp1) instead of a number array, and add `duration` (seconds, 2 places) to each JSON file. 1800 peaks are 2,404 characters (~2.4 KB a file instead of ~17.7 KB). Applies to `--output` / default JSON files and `--format inline`; `--precision` doesn't apply. A manifest's `peaks` stay hex. 3.0.0+. |
+| `--html` | `false` | flag | Print one `<div data-waveform-player data-url data-waveform data-duration data-preload="none" data-title>` per file (attributes HTML-escaped, path order) instead of writing JSON. URLs follow `--root` and `--base-url`; the title is the file name as the manifest reads it. With `--output` the JSON files are written too; with `--manifest`, the manifest too, and each snippet uses its entry's `url` and `title`. Exits `2` with `--format inline`. 3.0.0+. |
 | `--bpm` | `false` | flag | Run BPM detection and write an integer `"bpm"` into the JSON (only when a tempo is found). |
 | `--recursive` | `false` | flag | Scan passed directories recursively. Default scans the top level only. |
 | `--quiet` | `false` | flag | Suppress progress and the summary line. Errors always go to stderr (2.0.0+). |
 | `--manifest <file>` | — | path | Write one [sounds manifest](/extensions/gen/manifest/) for every input instead of a JSON per file (with `--output`, both). 2.1.0+. |
-| `--root <dir>` | _deepest folder containing every input_ | path | Manifest only: the folder URLs and types are relative to. |
-| `--base-url <url>` | `/` | string | Manifest only: the public URL of `--root`. |
+| `--root <dir>` | _deepest folder containing every input_ | path | Manifest and `--html`: the folder URLs and types are relative to. |
+| `--base-url <url>` | `/` | string | Manifest and `--html`: the public URL of `--root`. |
 | `--type <name>` | _the file's folder_ | string | Manifest only: one type for every sound. |
 | `--manifest-bars <n>` | `64` | integer | Manifest only: bars per sound. |
 | `--waveform-base-url <url>` | _`--base-url`_ | string | Manifest only: the public URL of `--output`, for each sound's `waveform` link. |
 | `--help`, `-h` | — | flag | Print help and `exit(0)`. Also shown when run with zero arguments. |
 | `--` | — | — | End of flags: every later argument is an input path. |
 
-Boolean flags (`--bpm`, `--recursive`, `--quiet`) take no value — `--bpm=true` is a usage error (exit `2`).
+Boolean flags (`--bpm`, `--recursive`, `--quiet`, `--compact`, `--html`) take no value — `--bpm=true` is a usage error (exit `2`).
 
 ### Default samples
 
@@ -152,7 +168,7 @@ As of `waveform-gen` 1.5.0 the library default was raised from `200` to `1800`, 
 |-----------|----------|
 | `--help` / `-h` / no args | Prints help, `exit(0)`. |
 | Every file generated | `exit(0)`. |
-| Unknown flag, flag missing its value, value on a boolean flag, `--manifest` with `--format inline` | `[WaveformGen] … (see --help)`, `exit(2)` before anything runs. |
+| Unknown flag, flag missing its value, value on a boolean flag, `--manifest` or `--html` with `--format inline` | `[WaveformGen] … (see --help)`, `exit(2)` before anything runs. |
 | Invalid flag value (`--samples 0`, `--samples abc`, `--format xml`, `--manifest-bars 0`) | Error message, `exit(1)` before anything runs. |
 | No audio files resolved | `[WaveformGen] No audio files found.`, `exit(1)`. |
 | Fatal / uncaught error | `[WaveformGen] Fatal error: …`, `exit(1)`. |

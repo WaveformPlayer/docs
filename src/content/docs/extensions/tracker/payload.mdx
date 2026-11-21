@@ -15,7 +15,7 @@ Every fired event sends the same shape. Field order is deterministic: `{ event, 
 | `event` | `string` | `'play'`, `'listen'`, or `'complete'`. |
 | `url` | `string` | The player's `options.url` (typically from `data-url`). **Required** — events without it are dropped with a warning. |
 | `time` | `number` | For `play` / `listen`: `floor(accumulated media-time)`. For `complete`: `floor(currentTime)`. |
-| `duration` | `number` | `floor(duration)` of the track, in seconds. `0` when unknown — a live stream (duration `Infinity`) or before metadata has loaded (1.1.0+; previously `null`). `complete` never fires for a live stream. |
+| `duration` | `number` | `floor(duration)` of the track, in seconds, as the audio reports it in the player's `timeupdate` / `ended` events. `0` when the audio doesn't know it — a live stream (duration `Infinity`) or audio whose metadata hasn't loaded yet (1.1.0+; previously `null`). The player's [`duration` option](/player/options/#source) is not used: it is a display hint, so a `preload: 'none'` player still reports the real length once playback has loaded the metadata. `complete` never fires for a live stream. |
 | `page` | `string` | `window.location.pathname` — path only, no query string or host. |
 | *…metadata* | `any` | Each key from your `metadata` config. |
 | `session` | `string` | Present only when `session` is enabled. |
@@ -159,7 +159,7 @@ WaveformTracker is purely reactive — it listens to player events and never ren
 | Source | Event | Effect |
 | --- | --- | --- |
 | `document` | `waveformplayer:ready` | Captured (capture phase) → `trackPlayer(detail.player)`. |
-| `document` | `waveformplayer:destroy` | Captured → `untrackPlayer(detail.player)`, which runs a final unthrottled threshold check first (1.1.0+). Prevents SPA leaks (player v1.8.0+). |
+| `document` | `waveformplayer:destroy` | Captured → `untrackPlayer(detail.player)`, which runs a final unthrottled threshold check first (1.1.0+). Prevents SPA leaks. |
 | container | `waveformplayer:play` | If the player's URL changed since the last event, reset `sentEvents` / `elapsedTime` (1.0.2+). Start tracking; reset the media-time baseline (`lastTime = null`). |
 | container | `waveformplayer:pause` | Run every threshold check unthrottled at the last known position (1.1.0+), then stop tracking and clear the baseline. Accumulated `elapsedTime` is **kept**. |
 | container | `waveformplayer:timeupdate` | `{ currentTime, duration }` → reset on a URL change (as for `play`), then accumulate deltas and run threshold checks. |
