@@ -15,6 +15,33 @@ One package per framework since 2.0, each with `/player`, `/bar`, `/playlist` an
 
 ## `@arraypress/waveform-react`
 
+### 2.1.0 — 2026-11-21
+
+For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
+2.1.0; `-bar` stays 2.0).
+
+#### Fixed — sounds (`./sounds`)
+- **`loop={false}` rendered the Loop toggle pressed on the server**, then
+  flipped it on hydration: the server `renderSounds` call didn't pass
+  `loop`. The render options now come from the core's
+  `pickRenderOptions()` (`@arraypress/waveform-sounds/render`) instead of a
+  hand-kept list, so a render option the core adds reaches the server
+  markup without an edit here.
+
+#### Changed
+- **sounds**: a re-mount whose markup didn't change hands the next instance
+  clean rows with the core's `destroy({ restore: true })` instead of
+  rewriting the host's `innerHTML`.
+- **playlist**: imports `@arraypress/waveform-playlist/no-autoinit`. The
+  2.1 root scans the page for `[data-waveform-playlist]` and registers
+  `<waveform-playlist>` on import, which a component that builds its own
+  playlist must not trigger.
+- **Peers**: `@arraypress/waveform-playlist` and `@arraypress/waveform-sounds`
+  are `^2.1.0` (the APIs above are 2.1). `-player` and `-bar` stay
+  `^2.0.0`. All four remain optional.
+- The sound list's handle `instance.engine` is now typed as the core's
+  `WaveformPlayer | null` (was `unknown`), from the sounds core's types.
+
 ### 2.0.0 — 2026-11-21
 
 The four React wrappers in one package, one sub-path per component, built
@@ -105,6 +132,34 @@ path, installing the 2.0 cores and being on React 19.3+.
   cores can't produce).
 
 ## `@arraypress/waveform-vue`
+
+### 2.1.0 — 2026-11-21
+
+For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
+2.1.0; `-bar` stays 2.0).
+
+#### Fixed — sounds (`./sounds`)
+- **`loop: false` rendered the Loop toggle pressed on the server**, then
+  flipped it on hydration: the renderer's option list didn't include
+  `loop`. The render options now come from the core's
+  `pickRenderOptions()` (`@arraypress/waveform-sounds/render`) instead of a
+  hand-kept list, so a render option the core adds reaches the server
+  markup without an edit here. `loop` is still applied live with
+  `setLoop()`: a change never re-patches the markup.
+
+#### Changed
+- **sounds**: a rebuild over unchanged markup hands the next instance clean
+  rows with the core's `destroy({ restore: true })` instead of rewriting the
+  host's `innerHTML`.
+- **playlist**: imports `@arraypress/waveform-playlist/no-autoinit`. The
+  2.1 root scans the page for `[data-waveform-playlist]` and registers
+  `<waveform-playlist>` on import, which a component that builds its own
+  playlist must not trigger.
+- **Peers**: `@arraypress/waveform-playlist` and `@arraypress/waveform-sounds`
+  are `^2.1.0` (the APIs above are 2.1). `-player` and `-bar` stay
+  `^2.0.0`. All four remain optional.
+- The exposed `instance.engine` is now typed as the core's
+  `WaveformPlayer | null` (was `unknown`), from the sounds core's types.
 
 ### 2.0.0 — 2026-11-21
 
@@ -208,6 +263,35 @@ its own core with `import()`, so you install only the cores you use.
 
 ## `@arraypress/waveform-svelte`
 
+### 2.1.0 — 2026-11-21
+
+For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
+2.1.0; `-bar` stays 2.0).
+
+#### Fixed — sounds (`./sounds`)
+- **`loop={false}` rendered the Loop toggle pressed on the server**, then
+  flipped it on hydration: the server `renderSounds` call didn't pass
+  `loop`. The render options now come from the core's
+  `pickRenderOptions()` (`@arraypress/waveform-sounds/render`) over the
+  forwarded options instead of a hand-kept list, so a render option the
+  core adds reaches the server markup without an edit here.
+
+#### Changed
+- **sounds**: a rebuild over unchanged markup hands the next instance clean
+  rows with the core's `destroy({ restore: true })` instead of rewriting the
+  host's `innerHTML`. Switching from `manifest` to `sounds` now has the
+  runtime build the list from `sounds` (the same `renderSounds` output)
+  rather than adopt Svelte's render.
+- **playlist**: imports `@arraypress/waveform-playlist/no-autoinit`. The
+  2.1 root scans the page for `[data-waveform-playlist]` and registers
+  `<waveform-playlist>` on import, which a component that builds its own
+  playlist must not trigger.
+- **Peers**: `@arraypress/waveform-playlist` and `@arraypress/waveform-sounds`
+  are `^2.1.0` (the APIs above are 2.1). `-player` and `-bar` stay
+  `^2.0.0`. All four remain optional.
+- `bind:instance` / `getInstance()`'s `engine` is now typed as the core's
+  `WaveformPlayer | null` (was `unknown`), from the sounds core's types.
+
 ### 2.0.0 — 2026-11-21
 
 The four Svelte wrappers are now one package, `@arraypress/waveform-svelte`,
@@ -302,6 +386,26 @@ install the ones for the sub-paths you import (`./player` needs only
   (bar 2.0 ships its own types).
 
 ## `@arraypress/waveform-astro`
+
+### 2.1.0 — 2026-11-21
+
+For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
+2.1.0; `-bar` stays 2.0).
+
+#### Fixed — sounds (`./sounds`)
+- **`loop={false}` rendered the Loop toggle pressed**, until the runtime
+  flipped it: the server `renderSounds` call didn't pass `loop`. The render
+  options now come from the core's `pickRenderOptions()`
+  (`@arraypress/waveform-sounds/render`) instead of a hand-kept list, so a
+  render option the core adds reaches the server markup without an edit
+  here.
+
+#### Changed
+- **Peers**: `@arraypress/waveform-sounds` is `^2.1.0` (`pickRenderOptions`
+  is 2.1). `-player`, `-bar` and `-playlist` stay `^2.0.0`. All four remain
+  optional.
+- README: the 2.1 cores' `<waveform-playlist>` and `<waveform-sounds>`
+  custom elements can be written directly in an Astro page.
 
 ### 2.0.0 — 2026-11-21
 
