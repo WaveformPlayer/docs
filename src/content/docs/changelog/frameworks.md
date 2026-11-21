@@ -15,6 +15,26 @@ One package per framework since 2.0, each with `/player`, `/bar`, `/playlist` an
 
 ## `@arraypress/waveform-react`
 
+### 2.2.0 — 2026-11-22
+
+For `@arraypress/waveform-sounds` 2.2.0 (the other cores are unchanged).
+
+#### Added — sounds (`./sounds`)
+- **`mergeEnharmonicKeys`** is forwarded to the core and re-mounts on a
+  change. The server markup honours it too (its render options are the
+  core's `pickRenderOptions()`), so `mergeEnharmonicKeys={false}` renders
+  A#m and Bbm as two key-menu entries on the server and keeps them apart
+  after hydration.
+
+#### Changed
+- **Peers**: `@arraypress/waveform-sounds` is `^2.2.0`. The server markup is
+  now 2.2's — rows carry only `data-ws-index`, every sound rides once in a
+  `<script type="application/json" data-ws-sounds>`, and only the rows the
+  list starts with are rendered — which a 2.1 runtime can't adopt. The JSON
+  script sits inside the host's opaque `dangerouslySetInnerHTML`, so it
+  hydrates without a mismatch. Code that read a row's `data-title` /
+  `data-url` / … should use the instance's sounds instead.
+
 ### 2.1.0 — 2026-11-21
 
 For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
@@ -132,6 +152,25 @@ path, installing the 2.0 cores and being on React 19.3+.
   cores can't produce).
 
 ## `@arraypress/waveform-vue`
+
+### 2.2.0 — 2026-11-22
+
+For `@arraypress/waveform-sounds` 2.2.0 (the other cores are unchanged).
+
+#### Added — sounds (`./sounds`)
+- **`mergeEnharmonicKeys`** prop (`Boolean`, default left to the core:
+  merged). A#m and Bbm, C# and Db are one key-menu entry unless it is
+  `false`. It shapes the server markup (through the core's
+  `pickRenderOptions()`) and the runtime, and a change rebuilds the list.
+
+#### Changed
+- **The server-rendered list is 2.2's markup**: only the rows the list
+  starts with, each carrying just `data-ws-index`; every sound travels once
+  in an inert `<script type="application/json" data-ws-sounds>` inside the
+  host's `innerHTML`. Hydration leaves it untouched (no mismatch), and the
+  2.2 runtime adopts it.
+- **Peers**: `@arraypress/waveform-sounds` is `^2.2.0` (a 2.1 runtime can't
+  adopt 2.2 markup). The others are unchanged and all remain optional.
 
 ### 2.1.0 — 2026-11-21
 
@@ -263,6 +302,29 @@ its own core with `import()`, so you install only the cores you use.
 
 ## `@arraypress/waveform-svelte`
 
+### 2.2.0 — 2026-11-22
+
+For `@arraypress/waveform-sounds` 2.2.0 (the other cores are unchanged).
+
+#### Added — sounds (`./sounds`)
+- **`mergeEnharmonicKeys`** prop (default `true`, the core's): A#m and Bbm,
+  C# and Db are one key-menu entry. It is forwarded to the runtime and
+  shapes the server markup through the core's `pickRenderOptions()`, so
+  `mergeEnharmonicKeys={false}` renders the spellings apart on the server
+  and keeps them apart after hydration.
+
+#### Changed
+- **The server-rendered markup is sounds 2.2's**: only the rows the list
+  starts with are rendered, each carrying just `data-ws-index`; every
+  sound rides once in an inert `<script type="application/json"
+  data-ws-sounds>` inside the host's `{@html}`, which hydrates without a
+  mismatch. Icons are one sprite per list. Read a row's sound from the
+  instance (`instance.sounds[row.dataset.wsIndex]`), not from row
+  attributes.
+- **Peer**: `@arraypress/waveform-sounds` is `^2.2.0` (the markup this
+  component renders must be the markup the runtime adopts). `-player`,
+  `-bar` and `-playlist` are unchanged. All four remain optional.
+
 ### 2.1.0 — 2026-11-21
 
 For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
@@ -386,6 +448,29 @@ install the ones for the sub-paths you import (`./player` needs only
   (bar 2.0 ships its own types).
 
 ## `@arraypress/waveform-astro`
+
+### 2.2.0 — 2026-11-22
+
+For `@arraypress/waveform-sounds` 2.2.0 (the other cores are unchanged).
+
+#### Added — sounds (`./sounds`)
+- **`mergeEnharmonicKeys`** is forwarded (`data-merge-enharmonic-keys`). The
+  2.2 core merges enharmonic keys (A#m / Bbm, C# / Db) into one key-menu
+  entry by default; `mergeEnharmonicKeys={false}` keeps the spellings apart.
+  The server render takes it through the core's `pickRenderOptions()`, so
+  the SSR key menu and the adopted runtime agree (tested both ways against
+  the real core).
+
+#### Changed
+- **Peers**: `@arraypress/waveform-sounds` is `^2.2.0`. Its server-rendered
+  markup changed in 2.2 — only the rows the list starts with are rendered, a
+  row carries only `data-ws-index`, and every sound travels once as an inert
+  `<script type="application/json" data-ws-sounds>` inside the component's
+  container — and the runtime that adopts it must be the same version.
+  `-player`, `-bar` and `-playlist` stay `^2.0.0`. All four remain optional.
+- The JSON script is data (`type="application/json"`, never executed), so the
+  component still ships no inline executable script; a strict hash-based CSP
+  is unaffected.
 
 ### 2.1.0 — 2026-11-21
 

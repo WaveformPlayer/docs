@@ -30,7 +30,7 @@ The four 1.x wrappers are replaced by sub-paths of this one package. Each sub-pa
 See [Migrating from 1.x](/getting-started/migrating-from-1x/).
 :::
 
-**Requirements:** React 19.3+ (`react` peer `^19.3.0`), the 2.0 cores (every core peer is `^2.0.0`), Node 22.12+, and browsers from Chrome/Edge 111, Firefox 114 and Safari 16.4. The package is ES modules only; `require()` still works on Node 22.12+, which loads ES modules through it. Types ship with it.
+**Requirements:** React 19.3+ (`react` peer `^19.3.0`), the 2.0 cores (core peers `^2.0.0`; `-playlist` `^2.1.0` and `-sounds` `^2.2.0`), Node 22.12+, and browsers from Chrome/Edge 111, Firefox 114 and Safari 16.4. The package is ES modules only; `require()` still works on Node 22.12+, which loads ES modules through it. Types ship with it.
 
 Every component follows the same design:
 
@@ -579,7 +579,7 @@ Changing `tracks` (compared by serialized value) or any construction-time option
 
 ## Sounds — `<WaveformSounds>`
 
-A searchable, filterable list of sound previews — a sample pack, a preset bank — with a mini waveform per row and one shared audio engine. Unlike the components above it **renders its markup in React**: with `sounds`, the whole list is in the first render (server HTML included) and the runtime adopts it on the client instead of rebuilding it. See [WaveformSounds](/extensions/sounds/) for what the list does.
+A searchable, filterable list of sound previews — a sample pack, a preset bank — with a mini waveform per row and one shared audio engine. Unlike the components above it **renders its markup in React**: with `sounds`, the list is in the first render (server HTML included) and the runtime adopts it on the client instead of rebuilding it. See [WaveformSounds](/extensions/sounds/) for what the list does.
 
 ### Install
 
@@ -646,9 +646,10 @@ Or from a [`waveform-gen --manifest`](/extensions/gen/manifest/) file, fetched a
 
 ### Props
 
-Every `WaveformSoundsOptions` key is a prop, typed from the core's own declarations — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings` — plus the callbacks `onReady` / `onPlay` / `onPause` / `onEnd` / `onFilter` / `onError`, and `id` / `className` / `style` for the host. See [Options](/extensions/sounds/options/) for each one.
+Every `WaveformSoundsOptions` key is a prop, typed from the core's own declarations — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `mergeEnharmonicKeys`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings` — plus the callbacks `onReady` / `onPlay` / `onPause` / `onEnd` / `onFilter` / `onError`, and `id` / `className` / `style` for the host. See [Options](/extensions/sounds/options/) for each one.
 
-- **Server markup.** With `sounds`, the host's inner HTML is the core's own [`renderSounds()`](/extensions/sounds/api/#server-rendering-render) output. With only `manifest`, the host is empty and the list is fetched and built client-side. The host carries `wfp-host waveform-sounds waveform-sounds--<player>` from the first render, so it's styled before hydration, and never `data-waveform-sounds` (the global auto-init must not mount it twice).
+- **`mergeEnharmonicKeys`** (2.2.0+, default `true`): A#m and Bbm, C# and Db are one key-menu entry; `false` keeps them apart. It shapes the server markup too (the render options are the core's `pickRenderOptions()`), so the server and the hydrated list agree. See [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys).
+- **Server markup.** With `sounds`, the host's inner HTML is the core's own [`renderSounds()`](/extensions/sounds/api/#server-rendering-render) output — the list's 2.2 markup: only the rows it starts with (the first page), each carrying just `data-ws-index`, and every sound once in an inert `<script type="application/json" data-ws-sounds>`. Read a row's sound from the instance (`instance.sounds[Number(row.dataset.wsIndex)]`) or an event's `sound`, not from row attributes — rows no longer carry `data-title`, `data-url` and the rest. It sits inside the host's opaque `dangerouslySetInnerHTML`, so it hydrates without a mismatch. With only `manifest`, the host is empty and the list is fetched and built client-side. The host carries `wfp-host waveform-sounds waveform-sounds--<player>` from the first render, so it's styled before hydration, and never `data-waveform-sounds` (the global auto-init must not mount it twice).
 - **Dropdown ids** are unique per list and stable across hydration: the `idPrefix` prop, else the `id` prop, else one from React's `useId()`.
 - **`urlState`** is runtime-only: the server renders the unfiltered list and the runtime applies the address on load.
 - **A changed option re-creates the list**, over freshly rendered markup. Arrays and objects (`sounds`, `filters`, `sorts`, `columns`, `strings`, `playerOptions`) compare by value, so inline literals are fine. A changed callback never re-creates it — the latest one is always called, and the ref is live by the time `onReady` and the first `onFilter` fire.
@@ -698,7 +699,7 @@ Calls before the instance mounts are no-ops. The core's bubbling [`waveformsound
 
 ## Server-side rendering
 
-All four components are SSR / RSC safe by construction: the host markup renders on the server, and the browser-only core is dynamically `import()`ed inside `useEffect` so it only evaluates client-side. `<WaveformSounds>` goes further and renders the whole list on the server (from the core's DOM-free `/render` entry) when given `sounds`. The interactive UI hydrates in once the library loads. Reserve layout space with the `style` prop (e.g. `style={{ minHeight: 96 }}`) to avoid a content shift before the waveform draws.
+All four components are SSR / RSC safe by construction: the host markup renders on the server, and the browser-only core is dynamically `import()`ed inside `useEffect` so it only evaluates client-side. `<WaveformSounds>` goes further and renders the list on the server (the toolbar, the first page of rows and the sound data, from the core's DOM-free `/render` entry) when given `sounds`. The interactive UI hydrates in once the library loads. Reserve layout space with the `style` prop (e.g. `style={{ minHeight: 96 }}`) to avoid a content shift before the waveform draws.
 
 ## Related
 

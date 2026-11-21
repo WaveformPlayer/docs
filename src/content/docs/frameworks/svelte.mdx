@@ -17,7 +17,7 @@ import { Tabs, TabItem, Aside, Card, CardGrid, Steps } from '@astrojs/starlight/
 
 There is no root import: `import … from '@arraypress/waveform-svelte'` is an error on purpose, because a combined entry would make your bundler resolve every core, including the ones you didn't install.
 
-**Requirements:** Svelte **5.59+** (peer `^5.59.0`), every core **2.0+** (`^2.0.0`), Node **22.12+**, ES modules only. Browsers: Chrome/Edge 111+, Firefox 114+, Safari 16.4+. Types ship with the package.
+**Requirements:** Svelte **5.59+** (peer `^5.59.0`), every core **2.0+** (`^2.0.0`; `-playlist` `^2.1.0`, `-sounds` `^2.2.0`), Node **22.12+**, ES modules only. Browsers: Chrome/Edge 111+, Firefox 114+, Safari 16.4+. Types ship with the package.
 
 :::note[Coming from 1.x]
 The four separate wrappers are replaced by this one package and are deprecated — they keep working with the 1.x cores, but get no 2.0 features. Each sub-path exports what its old package did, with the same props, callbacks and instance methods, plus the 2.0 additions below. Change the import and move the cores to 2.0:
@@ -463,7 +463,7 @@ A declarative `tracks` array with optional chapters, an embedded player, and imp
 
 ### Install
 
-Peer deps: `@arraypress/waveform-playlist` (`^2.0.0`), `@arraypress/waveform-player` (`^2.0.0`), `svelte` (`^5.59.0`).
+Peer deps: `@arraypress/waveform-playlist` (`^2.1.0`), `@arraypress/waveform-player` (`^2.0.0`), `svelte` (`^5.59.0`).
 
 <Tabs syncKey="pkg">
 
@@ -622,7 +622,7 @@ A searchable, filterable list of sound previews — a sample pack, a preset bank
 
 ### Install
 
-Peer deps: `@arraypress/waveform-sounds` (`^2.0.0`), `@arraypress/waveform-player` (`^2.0.0`), `svelte` (`^5.59.0`).
+Peer deps: `@arraypress/waveform-sounds` (`^2.2.0`), `@arraypress/waveform-player` (`^2.0.0`), `svelte` (`^5.59.0`).
 
 <Tabs syncKey="pkg">
 
@@ -689,10 +689,12 @@ Write the JSON with [`waveform-gen --manifest`](/extensions/gen/manifest/) — m
 
 ### Props
 
-Every `WaveformSoundsOptions` key except the callbacks is a prop, typed from the core's declarations (`WaveformSoundsProps`) — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings`. See [Options](/extensions/sounds/options/) for each one. `class`, `id`, `style` and any other attribute land on the host `<div>`. The sound list's API is unchanged in 2.0; a sound's `duration` now also reaches the engine, and `playerOptions` can't turn on the player's `loop` / `showLoop`.
+Every `WaveformSoundsOptions` key except the callbacks is a prop, typed from the core's declarations (`WaveformSoundsProps`) — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `mergeEnharmonicKeys`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings`. See [Options](/extensions/sounds/options/) for each one. `class`, `id`, `style` and any other attribute land on the host `<div>`. The sound list's API is unchanged in 2.0; a sound's `duration` now also reaches the engine, and `playerOptions` can't turn on the player's `loop` / `showLoop`.
 
 The callbacks are **lowercase props** — `onready`, `onplay`, `onpause`, `onend`, `onfilter`, `onerror` — with the core callbacks' arguments. They reach the live instance through closures, so a new handler never rebuilds the list. The core's bubbling [`waveformsounds:*` events](/extensions/sounds/api/#events) fire from the host too.
 
+- **`mergeEnharmonicKeys`** (2.2.0+, default `true`): A#m and Bbm, C# and Db are one key-menu entry. It is forwarded to the runtime and shapes the server markup through the core's `pickRenderOptions()`, so `mergeEnharmonicKeys={false}` keeps the spellings apart on the server and after hydration. See [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys).
+- **Server markup.** With `sounds`, the host's `{@html}` is the core's [`renderSounds()`](/extensions/sounds/api/#server-rendering-render) output — the list's 2.2 markup: only the rows it starts with (the first page), each carrying just `data-ws-index`, and every sound once in an inert `<script type="application/json" data-ws-sounds>`. Read a row's sound from the instance (`instance.sounds[Number(row.dataset.wsIndex)]`) or an event's `sound`, not from row attributes — rows no longer carry `data-title`, `data-url` and the rest. It hydrates without a mismatch, and icons are one sprite per list.
 - **Dropdown ids**: `idPrefix`, else the host's `id`, else a per-component id from `$props.id()` — unique, and identical on the server and during hydration.
 - **`urlState`** is runtime-only: the server renders the unfiltered list and the runtime applies the address after hydration.
 - **Any change to `sounds` or an option rebuilds the list** over a fresh render, so the new instance never adopts rows the old one re-sorted or hid. A `class`-only change doesn't rebuild.
@@ -736,7 +738,7 @@ Calls before the instance mounts are safe no-ops. The handle's type is exported 
 
 ## Server-side rendering
 
-All four components are SSR / SvelteKit-prerender safe by construction: the host markup (for the playlist, the `[data-track]` children; for the sound list, the whole list when given `sounds`) renders on the server, and the browser-only core is dynamically `import()`ed inside `$effect`. Because effects never run during SSR, the audio + canvas surface only evaluates after hydration on the client — no `import.meta.env.SSR` guard or `{#if browser}` wrapper is needed.
+All four components are SSR / SvelteKit-prerender safe by construction: the host markup (for the playlist, the `[data-track]` children; for the sound list, its toolbar, first page of rows and sound data when given `sounds`) renders on the server, and the browser-only core is dynamically `import()`ed inside `$effect`. Because effects never run during SSR, the audio + canvas surface only evaluates after hydration on the client — no `import.meta.env.SSR` guard or `{#if browser}` wrapper is needed.
 
 Reserve layout space with the `style` attribute (e.g. `style="min-height: 96px"`) to avoid a content shift before the waveform draws, and import each core's CSS once in your root `+layout.svelte` (for the bar and playlist, remember to import the player core too). For long pages of players, add `lazy` and `duration` so off-screen players cost nothing until they're needed — see [Lazy loading](/player/lazy-loading/) and [Zero-bandwidth players](/player/zero-bandwidth/).
 

@@ -44,7 +44,7 @@ The prop names, defaults, and full option surface are documented on the runtime 
 
 ## Install
 
-Install the package plus the core(s) of the components you use. The cores are optional peer dependencies at `^2.0.0`, so npm won't install them for you:
+Install the package plus the core(s) of the components you use. The cores are optional peer dependencies at `^2.0.0` (`-sounds` at `^2.2.0`), so npm won't install them for you:
 
 | Import from | Also install |
 | --- | --- |
@@ -94,7 +94,7 @@ There is no root import (`@arraypress/waveform-astro` on its own): each sub-path
 
 - **Astro 7.4+** (`^7.4.0`). Astro 6 is no longer supported.
 - **Node 22.12+.**
-- **The 2.0 cores**, which run on Chrome/Edge 111+, Firefox 114+ and Safari 16.4+.
+- **The 2.0 cores** (`./sounds` needs `@arraypress/waveform-sounds` 2.2+), which run on Chrome/Edge 111+, Firefox 114+ and Safari 16.4+.
 - **ES modules only.** The package ships its TypeScript source (`src/`), with no CommonJS build; Astro compiles it for you.
 
 ## Load the runtime once (in a layout)
@@ -498,7 +498,7 @@ The playlist's own `lazy` is unchanged from 1.x: it emits `data-waveform-playlis
 
 `@arraypress/waveform-astro/sounds` wraps [WaveformSounds](/extensions/sounds/), the searchable, filterable list of sound previews. It breaks from the other three components in two ways:
 
-- **It renders the whole list on the server.** Given `sounds`, the component writes the toolbar, the chips and every row with the core's DOM-free renderer (`@arraypress/waveform-sounds/render`); the browser runtime adopts that markup instead of rebuilding it, so the list is readable and crawlable before any script runs.
+- **It renders the list on the server.** Given `sounds`, the component writes the toolbar, the chips and the rows the list starts with (the first page) with the core's DOM-free renderer (`@arraypress/waveform-sounds/render`), plus every sound once as an inert `<script type="application/json" data-ws-sounds>`. The browser runtime adopts that markup instead of rebuilding it and renders further rows as they're revealed, so the list is readable before any script runs. A row carries only `data-ws-index` (2.2.0+), so read a sound from the instance (`instance.sounds[Number(row.dataset.wsIndex)]`) or an event's `detail.sound`, not from row attributes.
 - **It loads its own JavaScript.** The component ships one processed (bundled) `<script>` that loads the sounds runtime, and the player too unless the page already has one. You only add the stylesheets.
 
 ### Setup
@@ -556,10 +556,11 @@ Every core option is a prop, typed from the core's `WaveformSoundsOptions`, and 
 
 | Prop | Type | Notes |
 | --- | --- | --- |
-| `sounds` | `SoundInput[]` | Rendered on the server. An empty array renders an empty list (the manifest isn't fetched). |
+| `sounds` | `SoundInput[]` | The first page of rows is rendered on the server, every sound in the `data-ws-sounds` JSON. An empty array renders an empty list (the manifest isn't fetched). |
 | `manifest` | `string` | Fetched in the browser when there are no `sounds`. |
 | `player` | `'inline' \| 'strip'` | Always emitted (resolved the way the core resolves it). |
 | `search`, `showCount`, `loopToggle`, `loop`, `autoAdvance`, `arrowAudition` | `boolean` | Emitted as `"true"` / `"false"`. |
+| `mergeEnharmonicKeys` | `boolean` | 2.2.0+. `data-merge-enharmonic-keys`; `false` keeps A#m / Bbm apart in the key menu. The server render takes it too, so the SSR key menu and the adopted runtime agree. See [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys). |
 | `filters`, `sorts`, `columns` | `string[]` | Comma-separated; an empty array is emitted as `""` = none. |
 | `menuSearch`, `pageSize`, `maxTypeChips`, `barWidth`, `barGap` | `number` | |
 | `waveformStyle`, `waveformColor`, `progressColor` | `string` | |

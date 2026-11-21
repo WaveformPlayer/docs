@@ -30,7 +30,7 @@ The four separate Vue wrappers are replaced by sub-paths of the one package. Eac
 The old packages are deprecated; their last releases keep working with the 1.x cores. See [Migrating from 1.x](/getting-started/migrating-from-1x/).
 :::
 
-**Requirements:** Vue 3.5+ (`vue` peer `^3.5.0`). The cores are **optional** peer dependencies at `^2.0.0` — install the ones your sub-paths need, per the table above. The package is ES modules only (Node 22.12+ loads it through `require()` if you must), and building with it needs Node 22.12+. The 2.0 cores run on Chrome/Edge 111+, Firefox 114+ and Safari 16.4+.
+**Requirements:** Vue 3.5+ (`vue` peer `^3.5.0`). The cores are **optional** peer dependencies: `^2.0.0` for `-player` and `-bar`, `^2.1.0` for `-playlist` and `^2.2.0` for `-sounds` — install the ones your sub-paths need, per the table above. The package is ES modules only (Node 22.12+ loads it through `require()` if you must), and building with it needs Node 22.12+. The 2.0 cores run on Chrome/Edge 111+, Firefox 114+ and Safari 16.4+.
 
 Every component follows the same design:
 
@@ -644,8 +644,10 @@ Write `sounds.json` with [`waveform-gen --manifest`](/extensions/gen/manifest/) 
 
 ### Props
 
-Every `WaveformSoundsOptions` key except the callbacks is a runtime-declared prop, typed from the core's generated types — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings`. Use them camelCase or kebab-case in templates (`:page-size="100"`). See [Options](/extensions/sounds/options/) for each one. `class`, `style` and `id` fall through to the host, which always carries `wfp-host`.
+Every `WaveformSoundsOptions` key except the callbacks is a runtime-declared prop, typed from the core's generated types — `sounds` / `manifest`, `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `idPrefix`, `urlState`, `loopToggle`, `maxTypeChips`, `mergeEnharmonicKeys`, `pageSize`, `columns`, `waveformStyle`, `waveformColor`, `progressColor`, `barWidth`, `barGap`, `loop`, `autoAdvance`, `arrowAudition`, `playerOptions`, `playerClass`, `strings`. Use them camelCase or kebab-case in templates (`:page-size="100"`). See [Options](/extensions/sounds/options/) for each one. `class`, `style` and `id` fall through to the host, which always carries `wfp-host`.
 
+- **`mergeEnharmonicKeys`** (2.2.0+, `Boolean`, default left to the core: merged): A#m and Bbm, C# and Db are one key-menu entry unless it is `false`. It shapes the server markup (through the core's `pickRenderOptions()`) and the runtime alike. See [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys).
+- **Server markup.** With `sounds`, the host's `innerHTML` is the core's [`renderSounds()`](/extensions/sounds/api/#server-rendering-render) output — the list's 2.2 markup: only the rows it starts with (the first page), each carrying just `data-ws-index`, and every sound once in an inert `<script type="application/json" data-ws-sounds>`. Read a row's sound from the instance (`instance.sounds[Number(row.dataset.wsIndex)]`) or an event's `sound`, not from row attributes — rows no longer carry `data-title`, `data-url` and the rest. Hydration leaves it untouched, and the runtime adopts it.
 - **Dropdown ids**: `idPrefix`, else one from Vue's `useId()` — unique per list, identical on the server and the client.
 - **`urlState`** (`boolean | string`; a bare `url-state` attribute is `true`) is runtime-only: the server renders the unfiltered list and the runtime applies the address on load.
 - **A changed prop rebuilds the list** over freshly reset markup, but arrays and objects compare by value, so an equal inline literal from a re-rendering parent doesn't rebuild (and lose the visitor's filter and playback). **`loop` is the exception** — it's applied live through `setLoop()`.
@@ -704,7 +706,7 @@ A call before the instance exists is a no-op; a call while it's still building (
 
 ## Server-side rendering & Nuxt
 
-All four components are SSR / Nuxt safe by construction: the host markup (for the playlist, the `[data-track]` children; for the sound list, the whole list when given `sounds`) renders on the server, and the browser-only core is dynamically `import()`ed inside `onMounted` — which runs **only on the client**, never during server render. The interactive UI hydrates in once the library loads.
+All four components are SSR / Nuxt safe by construction: the host markup (for the playlist, the `[data-track]` children; for the sound list, its toolbar, first page of rows and sound data when given `sounds`) renders on the server, and the browser-only core is dynamically `import()`ed inside `onMounted` — which runs **only on the client**, never during server render. The interactive UI hydrates in once the library loads.
 
 No extra guarding is needed for the imperative path: keep instantiation inside `onMounted` (the components already do), never at module top level. Reserve layout space with `style` (e.g. `:style="{ minHeight: '96px' }"`) to avoid a content shift before the waveform draws.
 
