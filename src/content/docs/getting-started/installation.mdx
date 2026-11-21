@@ -20,6 +20,8 @@ build step required.
 
 That's everything. The script auto-initialises on load — see [Quick start](/getting-started/quick-start/).
 
+The 2.0 bundles support **Chrome/Edge 111+, Firefox 114+ and Safari 16.4+**. Coming from 1.x? Read [Migrating from 1.x](/getting-started/migrating-from-1x/) — and note that an unversioned or `@latest` CDN URL serves 2.0.
+
 ## npm
 
 <Tabs syncKey="pkg">
@@ -55,7 +57,7 @@ That's everything. The script auto-initialises on load — see [Quick start](/ge
 
 </Tabs>
 
-Then import the core and the stylesheet:
+The package is ES modules only and ships its TypeScript types. Bundling or rendering on the server needs Node 22.12+ (where `require()` of the package also works). Then import the core and the stylesheet:
 
 ```js
 import { WaveformPlayer } from '@arraypress/waveform-player';
@@ -69,7 +71,7 @@ The package exposes two JavaScript entry points. They are the same library — s
 | Import | What loading it does |
 | --- | --- |
 | `@arraypress/waveform-player` | Builds a player for every `[data-waveform-player]` on the page, then hands you the class. |
-| `@arraypress/waveform-player/no-autoinit` | Hands you the class. Nothing else. |
+| `@arraypress/waveform-player/no-autoinit` | Hands you the class. Nothing else — not even the [`<waveform-player>`](/player/element/) registration (call `defineWaveformPlayerElement()`). |
 
 The default is what you want on a page you author: drop the markup in, import once, and the players appear.
 
@@ -84,16 +86,36 @@ new WaveformPlayer( myElement, { url: '/audio/track.mp3' } );
 WaveformPlayer.init( myContainer );   // or scan a subtree you own
 ```
 
-<Aside type="caution">
-Pick **one entry point per bundle**. Each carries its own copy of the class and its own instance registry, so importing both leaves you with two libraries that can't see each other's players.
+<Aside type="note">
+In 2.0 the two ES module entries share one chunk, so a bundle that imports both (say, the bar's root import plus a framework component's `/no-autoinit`) still has one class and one instance registry. Don't load the script-tag build beside a bundled import, though: that is a second copy.
 </Aside>
 
-`/no-autoinit` was added in 1.27.0. Full detail: [choosing an entry point](/player/data-attributes/#if-you-dont-control-the-page-either).
+Full detail: [choosing an entry point](/player/data-attributes/#if-you-dont-control-the-page-either).
 
-## Framework wrappers
+## Framework packages
 
-Using Astro or React? Install the typed wrapper instead — see
-[Astro](/frameworks/astro/) and [React](/frameworks/react/).
+Using React, Vue, Svelte or Astro? Install the one package for your framework
+plus the cores you use, and import each component from its sub-path:
+
+```sh
+npm i @arraypress/waveform-react @arraypress/waveform-player
+```
+
+```tsx
+import { WaveformPlayer } from '@arraypress/waveform-react/player';
+```
+
+| Framework | Package | Sub-paths | Requires |
+| --- | --- | --- | --- |
+| [React](/frameworks/react/) | `@arraypress/waveform-react` | `/player` `/bar` `/playlist` `/sounds` | React 19.3+ |
+| [Vue](/frameworks/vue/) | `@arraypress/waveform-vue` | `/player` `/bar` `/playlist` `/sounds` | Vue 3.5+ |
+| [Svelte](/frameworks/svelte/) | `@arraypress/waveform-svelte` | `/player` `/bar` `/playlist` `/sounds` | Svelte 5.59+ |
+| [Astro](/frameworks/astro/) | `@arraypress/waveform-astro` | `/player` `/bar` `/playlist` `/sounds` | Astro 7.4+ |
+
+The cores (`@arraypress/waveform-player`, `-bar`, `-playlist`, `-sounds`) are
+optional peer dependencies, so npm installs only the ones you add. These four
+packages replace the sixteen 1.x `@arraypress/waveform-<core>-<framework>`
+wrappers.
 
 ## For AI agents
 

@@ -7,7 +7,7 @@ import { Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
 
 **The vanilla-JS waveform audio player — plus a bar, playlist, sound list,
 analytics and a peaks CLI.** A small, zero-dependency family configured from plain markup: drop
-in a script and a few `data-*` attributes and ship. ~12KB gzipped, no dependencies.
+in a script and a few `data-*` attributes and ship. About 19KB of JavaScript gzipped, no dependencies.
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@arraypress/waveform-player/dist/waveform-player.css">
@@ -19,6 +19,13 @@ in a script and a few `data-*` attributes and ship. ~12KB gzipped, no dependenci
 That is a complete, working player. Start with
 [Installation](/getting-started/installation/) and
 [Quick start](/getting-started/quick-start/).
+
+<Aside type="note" title="WaveformPlayer 2.0">
+	2.0 adds known durations, compact peaks, lazy loading, standard events,
+	looping, volume and download controls and a `<waveform-player>` element, and
+	puts each framework's components in one package. Upgrading? Read
+	[Migrating from 1.x](/getting-started/migrating-from-1x/).
+</Aside>
 
 <Aside type="tip" title="Building with an AI agent?">
 	Point it at [`waveformplayer.com/llms.txt`](https://waveformplayer.com/llms.txt)
@@ -53,9 +60,10 @@ That is a complete, working player. Start with
 <CardGrid>
 
 	<LinkCard title="Plain HTML / CDN" href="/frameworks/plain-html/" description="No build step." />
-	<LinkCard title="React" href="/frameworks/react/" description="Typed component + ref handle." />
-	<LinkCard title="Astro" href="/frameworks/astro/" description="Typed, SSR-safe component." />
-	<LinkCard title="Vue" href="/frameworks/vue/" description="Mount in onMounted." />
+	<LinkCard title="React" href="/frameworks/react/" description="@arraypress/waveform-react — typed components + ref handles." />
+	<LinkCard title="Vue" href="/frameworks/vue/" description="@arraypress/waveform-vue — typed props and emits." />
+	<LinkCard title="Svelte" href="/frameworks/svelte/" description="@arraypress/waveform-svelte — Svelte 5 components." />
+	<LinkCard title="Astro" href="/frameworks/astro/" description="@arraypress/waveform-astro — typed, SSR-safe components." />
 	<LinkCard title="WordPress" href="/frameworks/wordpress/" description="Enqueue + shortcode." />
 	<LinkCard title="Shopify" href="/frameworks/shopify/" description="Theme + Liquid sections." />
 

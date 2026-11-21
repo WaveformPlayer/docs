@@ -1,0 +1,247 @@
+---
+title: Migrating from 1.x
+description: What changes in WaveformPlayer 2.0, who has to change what, and how to stay on 1.x.
+sidebar:
+  order: 3
+  badge:
+    text: '2.0'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+WaveformPlayer 2.0 is a major release of the whole family. The player works as
+it did — same options, same `data-*` markup, same methods and events — but it
+is written in TypeScript, targets 2023-and-later browsers, ships ES modules
+only, and drops a short list of 1.x leftovers. It also adds
+[13 options and several features](#whats-new).
+
+**Most pages need no change.** If you load the player from a CDN or a bundler,
+use the canonical `data-*` names and support current browsers, 2.0 is a drop-in
+upgrade. The people who must change something are:
+
+- framework users — the [16 wrapper packages became 4](#package-names);
+- anyone using the removed [`data-color` / `data-theme`](#removed) aliases;
+- anyone who must support Safari before 16.4, Chrome before 111 or Firefox
+  before 114 ([requirements](#requirements));
+- code that imports a CommonJS build file or a `src/` path directly.
+
+## Package names
+
+The core packages keep their names; 2.0.0 is a major version bump:
+
+| Package | 2.0 version |
+| --- | --- |
+| `@arraypress/waveform-player` | 2.0.0 |
+| `@arraypress/waveform-bar` | 2.0.0 |
+| `@arraypress/waveform-playlist` | 2.0.0 |
+| `@arraypress/waveform-sounds` | 2.0.0 (was 0.3.x) |
+| `@arraypress/waveform-tracker` | 2.0.0 |
+| `@arraypress/waveform-gen` | 3.0.0 (its 2.x line was already published) |
+
+The **framework wrappers** change. The 16 single-component packages are
+replaced by **one package per framework**, with a sub-path per component:
+
+| 1.x package (last version) | 2.0 import |
+| --- | --- |
+| `@arraypress/waveform-player-react` (0.9.0) | `@arraypress/waveform-react/player` |
+| `@arraypress/waveform-bar-react` (0.5.0) | `@arraypress/waveform-react/bar` |
+| `@arraypress/waveform-playlist-react` (0.5.0) | `@arraypress/waveform-react/playlist` |
+| `@arraypress/waveform-sounds-react` (0.2.1) | `@arraypress/waveform-react/sounds` |
+| `@arraypress/waveform-player-vue` (0.7.0) | `@arraypress/waveform-vue/player` |
+| `@arraypress/waveform-bar-vue` (0.4.0) | `@arraypress/waveform-vue/bar` |
+| `@arraypress/waveform-playlist-vue` (0.5.0) | `@arraypress/waveform-vue/playlist` |
+| `@arraypress/waveform-sounds-vue` (0.2.1) | `@arraypress/waveform-vue/sounds` |
+| `@arraypress/waveform-player-svelte` (0.7.0) | `@arraypress/waveform-svelte/player` |
+| `@arraypress/waveform-bar-svelte` (0.4.0) | `@arraypress/waveform-svelte/bar` |
+| `@arraypress/waveform-playlist-svelte` (0.5.0) | `@arraypress/waveform-svelte/playlist` |
+| `@arraypress/waveform-sounds-svelte` (0.2.1) | `@arraypress/waveform-svelte/sounds` |
+| `@arraypress/waveform-player-astro` (0.8.0) | `@arraypress/waveform-astro/player` |
+| `@arraypress/waveform-bar-astro` (0.5.1) | `@arraypress/waveform-astro/bar` |
+| `@arraypress/waveform-playlist-astro` (0.5.0) | `@arraypress/waveform-astro/playlist` |
+| `@arraypress/waveform-sounds-astro` (0.2.1) | `@arraypress/waveform-astro/sounds` |
+
+Each sub-path exports the same components, props, refs/handles and types as the
+package it replaces, plus the 2.0 additions. There is **no root import**
+(`@arraypress/waveform-react` on its own does not resolve): each component
+loads its core with a dynamic `import()`, and a combined entry would force your
+bundler to resolve every core. The cores are **optional peer dependencies** at
+`^2.0.0`, so install only the ones you use:
+
+```bash
+# before
+npm install @arraypress/waveform-player-react @arraypress/waveform-bar-react \
+  @arraypress/waveform-player @arraypress/waveform-bar
+# after
+npm uninstall @arraypress/waveform-player-react @arraypress/waveform-bar-react
+npm install @arraypress/waveform-react @arraypress/waveform-player@^2 @arraypress/waveform-bar@^2
+```
+
+```tsx
+// before
+import { WaveformPlayer } from '@arraypress/waveform-player-react';
+import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-bar-react';
+// after
+import { WaveformPlayer } from '@arraypress/waveform-react/player';
+import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-react/bar';
+```
+
+Astro's deep paths move the same way:
+`@arraypress/waveform-player-astro/WaveformPlayer.astro` becomes
+`@arraypress/waveform-astro/player/WaveformPlayer.astro`, and `…/types` becomes
+`@arraypress/waveform-astro/player/types`.
+
+The old wrapper packages are deprecated on npm. They are not removed, and they
+keep working with 1.x cores — see [Staying on 1.x](#staying-on-1x).
+
+## Requirements
+
+| | 1.x | 2.0 |
+| --- | --- | --- |
+| Browsers | Chrome 80, Firefox 75, Safari 14.1 | **Chrome/Edge 111+, Firefox 114+, Safari 16.4+** (all from early 2023). Bundles are built for ES2022. |
+| Node (bundling, SSR, waveform-gen) | `>=14` (core), `>=18` (gen) | **22.12+** |
+| Module format | ES modules + CommonJS builds | **ES modules only.** `require()` still works on Node 22.12+, which loads ES modules through it. |
+| TypeScript | hand-written `index.d.ts` (none for the bar or tracker) | **generated from the TypeScript source and shipped by every package**, with declaration maps |
+| React | `^18 \|\| ^19` | **19.3+** |
+| Vue | 3.5+ | 3.5+ |
+| Svelte | 5.0+ (5.20+ for sounds) | **5.59+** |
+| Astro | 6 or 7 | **7.4+** |
+
+## Removed
+
+Every removal, and what to use instead.
+
+### Markup
+
+| Removed | Use instead |
+| --- | --- |
+| `data-color` | `data-waveform-color` (same values, including JSON gradient arrays) |
+| `data-theme` | `data-color-preset` |
+| Singular style names `bar` / `block` / `dot` | `bars` / `blocks` / `dots`. (The singular names were already rejected by option checking in late 1.x, so this only removes dead code.) |
+| The container's `data-duration`, `data-download-url`, `data-download-name` on a **playlist** | Put them on each `[data-track]`. |
+| Astro `<WaveformPlayer lazy>`'s `data-waveform-player-lazy` attribute and inline observer script | `<WaveformPlayer lazy>` still works; it now sets the core's [`lazy`](/player/lazy-loading/). Change any CSS or script that targeted `[data-waveform-player-lazy]` to `[data-lazy="true"]`. |
+
+```html
+<!-- before -->
+<div data-waveform-player data-url="/a.mp3" data-color="#a1a1aa" data-theme="dark"></div>
+<!-- after -->
+<div data-waveform-player data-url="/a.mp3" data-waveform-color="#a1a1aa" data-color-preset="dark"></div>
+```
+
+### Astro lazy
+
+```css
+/* before */
+[data-waveform-player-lazy] { min-height: 90px; }
+/* after */
+[data-lazy="true"] { min-height: 90px; }
+```
+
+### Builds and import paths
+
+| Removed | Use instead |
+| --- | --- |
+| CommonJS builds: `waveform-player.cjs`, `waveform-player-no-autoinit.cjs`, `waveform-sounds*.cjs`, `waveform-tracker.cjs`, and the wrappers' `.cjs` / `.d.cts` | The ES module builds. `require('@arraypress/waveform-player')` (and every other package) still works on Node 22.12+. |
+| The `require` export conditions and the `module` field | `exports` covers every current bundler. |
+| Deep imports of source: `@arraypress/waveform-tracker/src/*`, and any path outside `dist/` in `@arraypress/waveform-bar` (which had no `exports` map) | The package root, or `dist/*` paths (every documented `dist/` file still resolves). `src/` ships only for declaration maps. |
+| WaveformSounds' root `index.d.ts`, `no-autoinit.d.ts` and `render.d.ts` | Import types from the package entries as before; they now point at `types/`. |
+| WaveformPlaylist's own `data-*` fallback parser (for cores older than `parseDataAttributes`) | Nothing: the 2.0 core's parser is the only path. See [Behaviour changes](#behaviour-changes). |
+| React `forwardRef` wrappers | Function components with a `ref` prop. `ref={…}` works as before, with the same handle types. |
+
+```js
+// before (CommonJS build file)
+const WaveformPlayer = require('@arraypress/waveform-player/dist/waveform-player.cjs');
+// after (Node 22.12+)
+const WaveformPlayer = require('@arraypress/waveform-player').default;
+// or simply
+import WaveformPlayer from '@arraypress/waveform-player';
+```
+
+### Compatibility code
+
+These had no public surface, but they are gone, so they are listed for
+completeness: the `webkitAudioContext` fallback for BPM detection, the
+square-bar fallback for browsers without `roundRect`, the bar's copies of the
+core's theme detection and `isSafeHref` (kept for cores before 1.24.1), the
+tracker's fallbacks for cores before 1.8.0 and for pages without `fetch`, and
+every wrapper's typing fallbacks for 1.x cores.
+
+## Behaviour changes
+
+- **Bare-seconds durations show as clocks.** In WaveformBar's meta and
+  WaveformPlaylist's track list, a `data-duration="187"` now displays as `3:07`
+  (it displayed as `187`). Any other string is still shown as written. Both now
+  also pass the duration to the player — see [Zero-bandwidth pages](/player/zero-bandwidth/).
+- **The script-tag builds run in strict mode.** Every `*.js` / `*.min.js`
+  bundle now starts with `"use strict"`. The ES module builds always ran strict,
+  so this is the same code under the rules it already ran with there; only code
+  that patched the bundles' internals could notice.
+- **WaveformPlaylist's player options go through the core's parser only.** Its
+  value checks are the core's: a non-numeric `data-height` falls back to the
+  default with the core's warning, and `data-playback-rates="2"` is a one-rate
+  list.
+- **The playlist never passes `loop`, `showLoop` or `lazy` to its player**, from
+  constructor options or `data-*` — a looping track never ends, which would
+  stall `continuous` auto-advance.
+- **WaveformSounds' `playerOptions`**: `loop` and `showLoop` are forced off,
+  and `duration`, `downloadUrl` and `downloadName` are ignored (each sound brings
+  its own). Everything else still passes through. See
+  [Sounds options](/extensions/sounds/options/).
+- **`main` is the ES module build** in every package. In 1.x the bar's and
+  playlist's `main` was the script-tag build, so `require()` returned an empty
+  object.
+- **A bare jsDelivr URL serves the script-tag build** (`jsdelivr` field), as a
+  bare unpkg URL already did.
+- **One player class when both entry points are bundled.** Importing the root
+  and `/no-autoinit` in one bundle (as bar/playlist/sounds users with a
+  framework component do) used to bundle the player twice, with two instance
+  registries. They now share one chunk.
+- **More events.** `load`, `error`, `next` and `previous` now also have
+  `waveformplayer:*` DOM events, and the player is an `EventTarget`. Existing
+  listeners and callbacks are unaffected. The container's
+  `waveformplayer:timeupdate` still fires every animation frame.
+- **Astro**: the `astro:page-load` re-init script ships with every player (it
+  used to skip lazy ones).
+- **Fixed in 2.0** (you may have worked around these): a small `height` (under
+  50px) is now respected on phones; progress stays smooth when playback starts
+  before the metadata loads; the bar's queue panel is full width on phones; the
+  playlist's compact thumbnails stay 28px on phones.
+
+## What's new
+
+| Feature | Options / API | Read more |
+| --- | --- | --- |
+| Known length before the audio loads | `duration` / `data-duration` | [Zero-bandwidth pages](/player/zero-bandwidth/) |
+| Compact peaks | `wp1:` strings; `WaveformPlayer.utils.encodeCompactPeaks` / `decodeCompactPeaks`; waveform-gen `--compact`, `--html` | [Pre-computed peaks](/player/waveform-data/#compact-peaks-wp1) |
+| Lazy loading | `lazy` / `data-lazy` | [Lazy loading](/player/lazy-loading/) |
+| Standard events | the instance is an `EventTarget`; `waveformplayer:seek` / `ratechange` / `volumechange` / `loop` / `load` / `error` / `next` / `previous` | [Events](/player/events/) |
+| Looping | `loop`, `showLoop`, `loopLabel`; `setLoop()`, `clearLoop()`, `loopMarker()`, `toggleLoop()` | [Looping](/player/looping/) |
+| Volume controls | `showVolume`, `volume`, `volumeLabel`, `muteLabel`; `getVolume()`, `setMuted()` | [Options](/player/options/#visibility--behaviour) |
+| Download link | `showDownload`, `downloadUrl`, `downloadName`, `downloadLabel` | [Options](/player/options/#visibility--behaviour) |
+| Custom element | `<waveform-player>`; `defineWaveformPlayerElement()` in `/no-autoinit` | [The `<waveform-player>` element](/player/element/) |
+
+The framework components expose the 13 new options as props and the new
+events as `onSeek` / `@seek` / `onseek` (and friends): see
+[React](/frameworks/react/), [Vue](/frameworks/vue/),
+[Svelte](/frameworks/svelte/) and [Astro](/frameworks/astro/).
+
+## Staying on 1.x
+
+1.x keeps working; nothing is unpublished.
+
+- **npm**: pin the major — `"@arraypress/waveform-player": "^1.30.2"` — and keep
+  the old `@arraypress/waveform-<core>-<framework>` wrappers. They are
+  deprecated (npm prints a notice on install) but still install and run.
+- **CDN**: snippets that use `@latest` (or no version) move to 2.0
+  automatically. To stay on 1.x, pin the major in the URL:
+
+  ```html
+  <link rel="stylesheet" href="https://unpkg.com/@arraypress/waveform-player@1/dist/waveform-player.css">
+  <script src="https://unpkg.com/@arraypress/waveform-player@1/dist/waveform-player.min.js"></script>
+  ```
+
+<Aside type="caution" title="`@latest` CDN pages upgrade by themselves">
+A page that loads `@latest` from a CDN gets 2.0 as soon as it is published.
+That is fine for most pages — but if yours uses `data-color` / `data-theme` or
+must run on browsers older than the [2.0 floor](#requirements), either update
+the markup or pin `@1` first.
+</Aside>
