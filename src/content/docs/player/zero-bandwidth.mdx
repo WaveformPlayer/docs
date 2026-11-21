@@ -1,0 +1,118 @@
+---
+title: Zero-bandwidth pages
+description: Show every waveform and length on a page without downloading any audio until play.
+sidebar:
+  order: 10
+  badge:
+    text: '2.0'
+    variant: tip
+---
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+A catalogue, a podcast archive or a beat store can put dozens of players on one
+page. With 2.0, each of them can show its waveform, its title and its length
+while the page downloads **no audio at all** — nothing is fetched until someone
+presses play, and then only that one track.
+
+Three options do it together:
+
+| Option | What it removes |
+| --- | --- |
+| `preload: 'none'` (`data-preload="none"`) | The browser's metadata request for every `<audio>`. |
+| `waveform` with [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) | The Web Audio decode, and — because the peaks are inline — the `.json` sidecar request. |
+| [`duration`](/player/options/#source) (`data-duration`) | The one thing `preload: 'none'` used to cost you: without metadata, 1.x players showed `0:00` and couldn't place markers until play. |
+
+Measured in Chromium against the 2.0 core: a page of **50 players** built this
+way makes **0 audio requests** until one is played.
+
+## The markup
+
+```html
+<div
+  data-waveform-player
+  data-url="/audio/little-paris.mp3"
+  data-preload="none"
+  data-duration="122"
+  data-waveform="wp1:AAAAAAAAAAAAAbxcUcRoU0I9ODAqIx8d…"
+  data-title="Little Paris"
+></div>
+```
+
+The time readout shows `0:00 / 2:02` at once. Until the audio's own metadata
+arrives — which with `preload: 'none'` is only once playback starts — the
+`duration` is the total: markers are placed against it, and the hover time,
+the accessible seek slider and the Media Session scrubber use it. A seek in that
+window (a click or key on the waveform, a marker, `seekTo()`) moves the playhead
+at once and is applied to the audio as soon as it can seek. When the real
+duration arrives it replaces yours.
+
+## Generate it
+
+You don't have to write those attributes by hand. [WaveformGen](/extensions/gen/)
+3.0 prints one snippet per file with `--html`:
+
+<Steps>
+
+1. **Print the players**
+
+   ```bash
+   npx @arraypress/waveform-gen ./public/audio/*.mp3 --html --base-url /audio/
+   ```
+
+   Each line is a `<div data-waveform-player>` with `data-url`, `data-waveform`
+   (compact peaks), `data-duration`, `data-preload="none"` and `data-title`,
+   attributes HTML-escaped, in path order. URLs follow `--root` and
+   `--base-url`. No JSON is written unless `--output` asks for it.
+
+2. **Paste them into the page**, or write them out at build time from a template.
+
+3. **Load the player once:**
+
+   ```html
+   <link rel="stylesheet" href="https://unpkg.com/@arraypress/waveform-player@latest/dist/waveform-player.css">
+   <script src="https://unpkg.com/@arraypress/waveform-player@latest/dist/waveform-player.min.js"></script>
+   ```
+
+</Steps>
+
+Rather keep JSON sidecars? `--compact` writes `{ "peaks": "wp1:…", "duration": 122 }`
+files (about 2.4 KB each instead of ~18 KB). The player reads the peaks from a
+sidecar but not its `duration`, so put the length in the markup
+(`data-duration`) for it to show before play.
+
+## In JavaScript and the frameworks
+
+```js
+new WaveformPlayer('#player', {
+  url: '/audio/little-paris.mp3',
+  preload: 'none',
+  duration: 122,
+  waveform: 'wp1:AAAAAAAAAAAAAbxcUcRoU0I9ODAqIx8d…',
+});
+```
+
+The framework components take the same props — `preload="none"`,
+`duration={122}`, `waveform="wp1:…"` — in [React](/frameworks/react/),
+[Vue](/frameworks/vue/), [Svelte](/frameworks/svelte/) and
+[Astro](/frameworks/astro/). The [`<waveform-player>`](/player/element/) element
+takes them as attributes.
+
+## Bar and playlist
+
+- **[WaveformBar](/extensions/bar/triggers/)** 2.0 passes a trigger's
+  `data-duration` (seconds or `3:07`) and `wp1:` `data-waveform` to its player,
+  so the bar shows the length before any audio loads. On the usual markup — one
+  element that is both the inline player and the trigger — one `data-duration`
+  serves both.
+- **[WaveformPlaylist](/extensions/playlist/)** 2.0 passes each track's
+  `data-duration` (`3:45`, `1:02:03` or bare seconds) and `wp1:` `data-waveform`
+  to its player.
+- **[WaveformSounds](/extensions/sounds/)** passes a sound's `duration` to its
+  engine player.
+
+<Aside type="tip" title="Zero bandwidth or lazy?">
+These options remove the work. [`lazy`](/player/lazy-loading/) only postpones it
+until a player nears the viewport — useful when peaks come from `.json` files or
+have to be decoded. The two combine: a lazy player with inline peaks and
+`preload: 'none'` still downloads nothing until play.
+</Aside>

@@ -1,0 +1,88 @@
+---
+title: Looping
+description: Loop a whole track, a section, or a chapter — with an optional loop toggle.
+sidebar:
+  order: 12
+  badge:
+    text: '2.0'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+Looping is new in 2.0. It works in self mode only: an
+[external-mode](/player/external-mode/) player ignores all of it, because its
+controller owns playback.
+
+## Loop the whole track
+
+```html
+<div data-waveform-player data-url="/audio/drum-loop.mp3" data-loop="true" data-show-loop="true"></div>
+```
+
+```js
+new WaveformPlayer('#player', { url: '/audio/drum-loop.mp3', loop: true, showLoop: true });
+```
+
+`loop` uses the `<audio>` element's own `loop`, so the wrap is **seamless**.
+`ended` / `onEnd` don't fire on it; the wrap is a seek to 0, so `seek` (and
+`timeupdate`) fire instead.
+
+`showLoop` adds a loop toggle to the meta row: a real `<button>` with
+`aria-pressed`, named by `loopLabel` (default `'Loop'`). Pressing it turns
+looping off when any loop (track or section) is on, and whole-track looping on
+otherwise. It needs `showInfo` (the meta row).
+
+## Loop a section
+
+```js
+player.setLoop(32, 48);   // loop 0:32–0:48
+player.loopMarker(1);     // loop marker 1 to the next marker (or the end)
+player.clearLoop();       // stop the section loop
+```
+
+- [`setLoop(start, end)`](/player/methods/#setloopstart-end) loops a section in
+  seconds. Once the playhead reaches `end` it jumps back to `start`; if it is
+  outside the section it moves to `start`. An `end` past the track (or
+  `Infinity`) loops to the end. Invalid bounds (`end <= start`, non-numbers) are
+  ignored.
+- [`loopMarker(index)`](/player/methods/#loopmarkerindex) loops from a marker (its
+  position in `markers`) to the next marker in time — handy for chapters,
+  verses or stems.
+- [`clearLoop()`](/player/methods/#clearloop) stops the section; whole-track
+  looping, if on, carries on.
+
+While a section is set it wins over whole-track looping, and `ended` never fires
+inside it. A section is per-track: a new track clears it.
+
+## Toggle from code
+
+```js
+player.toggleLoop();      // flip, like the button; returns the new state
+player.toggleLoop(true);  // whole-track looping on
+player.toggleLoop(false); // every loop off, section included
+```
+
+## Events
+
+Every change — `toggleLoop()`, `setLoop()`, `clearLoop()`, the button, a new
+track dropping a section — fires `loop` on the instance and a bubbling
+`waveformplayer:loop` on the container:
+
+```js
+document.addEventListener('waveformplayer:loop', (e) => {
+  const { loop, start, end } = e.detail; // start/end are null without a section
+  console.log(loop ? 'looping' : 'not looping', start, end);
+});
+```
+
+React, Vue and Svelte expose it as `onLoop` / `@loop` / `onloop`. See
+[Events](/player/events/).
+
+<Aside type="caution" title="Not in playlists or sound lists">
+A looping track never fires `ended`, which is what drives auto-advance. So
+[WaveformPlaylist](/extensions/playlist/options/) never passes `loop`,
+`showLoop` or `loopLabel` to its player, and
+[WaveformSounds](/extensions/sounds/options/) forces its engine's `loop` and
+`showLoop` off (it has its own Loop toggle). Drive a playlist's player with
+`setLoop()` if you need a section loop there.
+</Aside>

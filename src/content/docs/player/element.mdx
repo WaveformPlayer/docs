@@ -1,0 +1,94 @@
+---
+title: The <waveform-player> element
+description: A light-DOM custom element that takes every option as an attribute.
+sidebar:
+  label: '<waveform-player>'
+  order: 13
+  badge:
+    text: '2.0'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+2.0 adds a custom element. It is the same player as
+`<div data-waveform-player>`, as a tag:
+
+```html
+<waveform-player src="/audio/track.mp3" duration="187" waveform-style="bars" show-volume></waveform-player>
+```
+
+## Attributes
+
+Every [`data-*` option](/player/data-attributes/) is an attribute, **with or
+without** the `data-` prefix: `src`, `url`, `title`, `waveform-style`,
+`duration`, `show-download`, … When both forms are present, the plain one wins.
+
+- **Booleans**: a bare attribute means true, as HTML boolean attributes do —
+  `<waveform-player loop>`. (The `data-` form keeps the
+  [`data-*` rule](/player/data-attributes/#how-values-are-parsed): only `="true"`
+  enables it.)
+- **`style`**: plain `style` is the element's CSS, so the waveform-style alias
+  only works as `data-style`. Use `waveform-style`.
+- Values are parsed exactly as `data-*` values are.
+
+## Light DOM
+
+The element renders into itself — no shadow root — so:
+
+- the [stylesheet](/player/styling/) applies, as to any `[data-waveform-player]`;
+- server-rendered markup upgrades in place;
+- `waveformplayer:*` events bubble from the tag, so one listener on `document`
+  hears it like any other player.
+
+Like any mount element, its existing children are replaced by the player and
+its classes are kept.
+
+The stylesheet makes the element a block, and until the script defines it, it
+holds a default player's height (`--wfp-element-height`, 90px), so the page
+doesn't shift as it upgrades. Set that property for a taller or shorter
+configuration.
+
+## Scripting it
+
+```js
+const el = document.querySelector('waveform-player');
+
+el.player;        // the WaveformPlayer instance (null while disconnected)
+el.play();        // play(), pause() and togglePlay() forward to it
+el.setAttribute('src', '/audio/next.mp3'); // loads the next track
+```
+
+- Changing `src`, `url`, `title`, `artist`, `artwork`, `waveform` or `duration`
+  (either form) **loads the new track**, playing on if it was playing.
+- Changing any other option attribute **rebuilds** the player. Several changes
+  in one task are batched into one load or rebuild.
+- **Removing** the element destroys its player. **Moving** it within the DOM
+  does not, and playback carries on.
+
+## Registration
+
+The default bundle — the script tag or `import '@arraypress/waveform-player'` —
+registers `<waveform-player>` before it scans the page, unless the page sets
+[`data-waveform-autoinit="false"`](/player/data-attributes/#initialising-only-what-you-control).
+
+The [`/no-autoinit`](/getting-started/installation/#entry-points) entry point
+registers nothing. Call `defineWaveformPlayerElement()` yourself — optionally
+with another tag name:
+
+```js
+import { defineWaveformPlayerElement } from '@arraypress/waveform-player/no-autoinit';
+
+defineWaveformPlayerElement();                 // <waveform-player>
+defineWaveformPlayerElement('my-audio-player'); // or your own name
+```
+
+It returns the registered constructor (or `undefined` outside a browser), and a
+name that is already defined is left alone. The class is exported too, as
+`WaveformPlayerElement`.
+
+<Aside type="tip" title="TypeScript and JSX">
+The element is typed on `HTMLElementTagNameMap`, so
+`document.querySelector('waveform-player')` returns a `WaveformPlayerElement`.
+`@arraypress/waveform-react` adds JSX typing — see
+[React](/frameworks/react/).
+</Aside>

@@ -1,0 +1,75 @@
+---
+title: Lazy loading
+description: Build every player at once, but load and draw each one only as it nears the viewport.
+sidebar:
+  order: 11
+  badge:
+    text: '2.0'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+`lazy` (`data-lazy="true"`) defers a player's expensive work until it comes
+within **200px of the viewport**. Every lazy player on the page shares one
+IntersectionObserver.
+
+```html
+<div data-waveform-player data-lazy="true" data-url="/audio/track.mp3" data-waveform="/audio/track.json"></div>
+```
+
+```js
+new WaveformPlayer('#player', { url: '/audio/track.mp3', lazy: true });
+```
+
+## What waits, and what doesn't
+
+The player itself is built at once: it is registered in
+`WaveformPlayer.instances`, its methods work, and `WaveformPlayer.init()` treats
+it as initialised. Until it nears the viewport it shows what it shows while
+loading — the title, the loading state and any known [`duration`](/player/options/#source) —
+at its **full height**, so nothing shifts when it loads.
+
+What waits:
+
+- assigning the audio source (so not even a metadata request goes out),
+- fetching a `.json` peaks sidecar,
+- decoding the audio for peaks,
+- drawing the waveform.
+
+Anything that needs the audio loads it straight away: `play()` (and so
+`togglePlay()`, the play button and Space), a seek, `load()` or `loadTrack()`.
+`autoplay` waits for the player to be loaded. In external mode `lazy` defers the
+peaks the same way. Where IntersectionObserver is missing, the player loads as
+if it weren't lazy.
+
+Measured in Chromium against the 2.0 core: a page of 30 lazy players loaded
+the 2 in view, then all 30 after scrolling through.
+
+## Lazy or zero-bandwidth?
+
+| | `lazy` | [`preload: 'none'` + `duration` + inline peaks](/player/zero-bandwidth/) |
+| --- | --- | --- |
+| Audio requests before play | none until in view, then a metadata request (with the default `preload`) | none |
+| Peaks | fetched or decoded when in view | inline, drawn at once |
+| Best for | players whose peaks are `.json` files or must be decoded | catalogues you can generate peaks for |
+
+They combine: `lazy` on a zero-bandwidth player also postpones drawing until
+it's in view.
+
+## In the frameworks and extensions
+
+- **Astro**: `<WaveformPlayer lazy>` now sets the core's `lazy` option
+  (`data-lazy`). In 1.x it was the component's own IntersectionObserver
+  (`data-waveform-player-lazy`), which is gone — see
+  [Migrating from 1.x](/getting-started/migrating-from-1x/#astro-lazy).
+- **React, Vue, Svelte**: a `lazy` prop on the player component.
+- **WaveformPlaylist** never passes `lazy` to its player (it would only defer
+  the playlist's own single player). The playlist's Astro component keeps its
+  own `lazy` prop, which defers building the whole playlist.
+- **WaveformSounds**: `lazy` has no effect on its engine, which loads nothing
+  until a sound plays anyway.
+
+<Aside type="note">
+`lazy` is not `loading="lazy"` for audio: a lazy player that is played before it
+scrolls into view simply loads then.
+</Aside>
