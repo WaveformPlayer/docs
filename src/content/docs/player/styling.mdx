@@ -42,10 +42,6 @@ const player = new WaveformPlayer('#player', {
 <div data-waveform-player data-src="/audio/track.mp3" data-color-preset="dark"></div>
 ```
 
-:::note
-`data-theme` is a legacy alias for `data-color-preset`, and `data-color` is a legacy alias for `data-waveform-color`. The canonical attributes win when both are present.
-:::
-
 ### Automatic light/dark detection
 
 When `colorPreset` is `null` (or an unrecognized value), the player calls `detectColorScheme()` and picks the matching preset. Resolution order, first match wins:
@@ -164,6 +160,7 @@ For look-and-feel that the stylesheet owns, override CSS variables rather than p
 | `--waveform-line-height` | `1.4`  | Root `line-height` of the player.                                      |
 | `--waveform-body-gap`    | `8px`  | Vertical gap between the track row and the info block.                 |
 | `--waveform-track-gap`   | `12px` | Horizontal gap between the play button and the waveform.               |
+| `--wfp-element-height`   | `90px` | 2.0. Height a [`<waveform-player>`](/player/element/) element holds before the script defines it, so the page doesn't shift. Set it for a taller or shorter configuration. |
 
 Set them on `.waveform-player` (or any ancestor) — and this is also where you'd add a visible card background/border, since the root ships transparent:
 
@@ -181,6 +178,24 @@ Set them on `.waveform-player` (or any ancestor) — and this is also where you'
 ```
 
 The full set of class hooks (`.waveform-btn`, `.waveform-container`, `.waveform-title`, `.waveform-meta`, …) is available on the rendered DOM if you need finer-grained targeting.
+
+### The meta-row controls (2.0)
+
+The [`showLoop`, `showVolume` and `showDownload`](/player/options/#visibility--behaviour) controls render in the meta row with these hooks:
+
+| Selector | Element |
+| --- | --- |
+| `.waveform-ctrl` | Every meta-row icon control (loop, mute, download). Secondary text colour until hovered or pressed; `[aria-pressed="true"]` takes the full text colour and a faint background. |
+| `.waveform-loop` | The loop toggle (`<button aria-pressed>`). |
+| `.waveform-volume` | Wrapper for the mute toggle and the slider. |
+| `.waveform-mute` | The mute toggle (`<button aria-pressed>`); it swaps its icon with its state. |
+| `.waveform-volume-slider` | The `<input type="range">`, 64px wide, `accent-color: var(--wfp-text-color)`. Hidden where scripted volume is ignored (iOS). |
+| `.waveform-download` | The `<a download>` link; `hidden` while there is no usable URL. |
+
+```css
+/* A wider volume slider, tinted to the brand */
+.waveform-player .waveform-volume-slider { width: 96px; accent-color: #6366f1; }
+```
 
 ### The `waveform-is-placeholder` state class
 

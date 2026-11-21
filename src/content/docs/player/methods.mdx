@@ -19,7 +19,7 @@ player.play();
 ```
 
 <Aside type="note" title="Self mode vs. external mode">
-Several methods behave differently — or are no-ops — depending on `audioMode`. In the default `'self'` mode the player owns an `<audio>` element and these methods drive it directly. In `'external'` mode there is no `<audio>` (`player.audio` is `null`): `seekTo`, `seekToPercent`, `setVolume` and `setPlaybackRate` are no-ops, and `play` / `pause` dispatch cancelable `waveformplayer:request-*` events instead of moving an audio clock. See [`setPlayingState`](#setplayingstateplaying) / [`setProgress`](#setprogresscurrenttime-duration) for driving an external player.
+Several methods behave differently — or are no-ops — depending on `audioMode`. In the default `'self'` mode the player owns an `<audio>` element and these methods drive it directly. In `'external'` mode there is no `<audio>` (`player.audio` is `null`): `seekTo`, `seekToPercent`, `setVolume`, `setMuted`, `setPlaybackRate` and the loop methods are no-ops, and `play` / `pause` dispatch cancelable `waveformplayer:request-*` events instead of moving an audio clock. See [`setPlayingState`](#setplayingstateplaying) / [`setProgress`](#setprogresscurrenttime-duration) for driving an external player.
 </Aside>
 
 ## Construction
@@ -33,7 +33,7 @@ Creates and mounts a player.
 | `container` | `string \| HTMLElement` | A CSS selector or an element. The selector is resolved with `querySelector`. |
 | `options` | `WaveformPlayerOptions` | Optional. See [Options](/player/options/). |
 
-**Returns** the `WaveformPlayer` instance. **Throws** `Error('[WaveformPlayer] Container element not found')` if the container cannot be resolved.
+**Returns** the `WaveformPlayer` instance, which is an `EventTarget` (2.0): `player.addEventListener('play', …)` works and is typed — see [Events](/player/events/#listening-on-the-instance-20). **Throws** `Error('[WaveformPlayer] Container element not found')` if the container cannot be resolved.
 
 Configuration is merged in precedence order **defaults &lt; `data-*` attributes &lt; constructor options**, then the resolved colour preset and per-style bar sizing (`STYLE_DEFAULTS`) are applied. Aliases are normalized (`style` → `waveformStyle`, `src` → `url`; the canonical key wins). The instance is registered in [`WaveformPlayer.instances`](#waveformplayerinstances), the DOM and audio are initialized, and `waveformplayer:ready` fires roughly 100 ms later.
 
@@ -45,6 +45,10 @@ const a = new WaveformPlayer('#player', { url: '/audio/a.mp3' });
 const el = document.querySelector('.my-player');
 const b = new WaveformPlayer(el, { url: '/audio/b.mp3', waveformStyle: 'bars' });
 ```
+
+<Aside type="caution" title="The container's children are replaced">
+The player renders its own markup into `container`, so whatever was inside it — a `Loading…` line, a fallback link — is removed. The container's **classes are kept**: the player adds `waveform-player` beside them and only resets the classes it sets itself, so a theme class, a scoped framework class or a CSS-module class survives ([#32](https://github.com/WaveformPlayer/waveform-player/issues/32)).
+</Aside>
 
 <Aside type="tip">
 You rarely need `new` for declarative markup. Any element carrying `data-waveform-player` is instantiated automatically on `DOMContentLoaded`, and you can re-scan the DOM at any time with [`WaveformPlayer.init()`](#waveformplayerinitroot). See [Installation](/getting-started/installation/).
@@ -160,7 +164,7 @@ Only the fields you pass are touched — omitted metadata is preserved. Before 1
 </Aside>
 
 <Aside type="caution" title="Why the per-track reset matters">
-`mergeOptions` skips `null` / `undefined`, so a later call can't clear an earlier value by passing `null`. That is exactly why `loadTrack` explicitly resets `options.waveform = null` and `options.markers = []` for every track — otherwise the previous track's peaks and markers would persist and the new track would redraw the *old* waveform (the 1.8.1 fix). Since 1.28.0 `bpm` and `album` get the same treatment, so a tempo badge or lock-screen album no longer carries over to the next track. If you add your own per-track options, reset them here too.
+`mergeOptions` skips `null` / `undefined`, so a later call can't clear an earlier value by passing `null`. That is exactly why `loadTrack` explicitly resets `options.waveform = null` and `options.markers = []` for every track — otherwise the previous track's peaks and markers would persist and the new track would redraw the *old* waveform (the 1.8.1 fix). Since 1.28.0 `bpm` and `album` get the same treatment, so a tempo badge or lock-screen album no longer carries over to the next track; in 2.0 so do `duration`, `downloadUrl` and `downloadName`, and a section loop is cleared. If you add your own per-track options, reset them here too.
 </Aside>
 
 ## Audio settings (self mode)
@@ -175,6 +179,14 @@ Sets the audio volume.
 
 No-op in external mode. **Returns** `void`.
 
+### `getVolume()`
+
+**2.0.** The audio's volume, 0..1 — unaffected by muting. **Returns** `number`, or `null` in external mode.
+
+### `setMuted(muted)`
+
+**2.0.** Mutes or unmutes the audio, keeping its volume. Works where scripted volume doesn't (iOS). The [`showVolume`](/player/options/#visibility--behaviour) controls follow it. No-op in external mode. **Returns** `void`.
+
 ### `setPlaybackRate(rate)`
 
 Sets the playback speed.
@@ -187,7 +199,36 @@ Applies to the audio, persists to `options.playbackRate`, and refreshes the spee
 
 ```js
 player.setVolume(0.8);
+player.setMuted(true);
+player.getVolume(); // 0.8 — muting keeps the volume
 player.setPlaybackRate(1.5);
+```
+
+## Looping (self mode)
+
+**2.0.** Every change fires `loop` / `waveformplayer:loop`. All four are no-ops in external mode. See [Looping](/player/looping/) for the details.
+
+### `toggleLoop(force?)`
+
+Without an argument, flips looping: off when any loop is on (whole track or section), whole-track looping on otherwise — what the `showLoop` button does. `true` turns whole-track looping on; `false` turns every loop off, section included. **Returns** `boolean` — whether the player now loops.
+
+### `setLoop(start, end)`
+
+Loops a section, in seconds: once the playhead reaches `end` it jumps back to `start`. If the playhead is outside the section it moves to `start`. An `end` past the track (or `Infinity`) loops to the end. Invalid bounds (`end <= start`, non-numbers) are ignored. A new track clears it. **Returns** `void`.
+
+### `loopMarker(index)`
+
+Loops from marker `index` (its position in `markers`) to the next marker in time, or to the end of the track. Ignored for an index with no marker. **Returns** `void`.
+
+### `clearLoop()`
+
+Stops a section loop; whole-track looping, if on, carries on. **Returns** `void`.
+
+```js
+player.setLoop(32, 48);   // loop 0:32–0:48
+player.loopMarker(1);     // or: loop the second chapter
+player.clearLoop();
+player.toggleLoop(true);  // loop the whole track
 ```
 
 ## Waveform & markers
@@ -428,6 +469,8 @@ A bag of shared, pure helpers bridged onto the class so sibling packages and CDN
 | `parseDataAttributes` | `(element: HTMLElement) => object` | Parses the `data-*` contract into an options object. |
 | `detectColorScheme` | `(element?: Element) => 'dark' \| 'light'` | The auto-theme check: explicit theme hints first, then the backdrop behind `element` (through shadow roots since 1.29.0). |
 | `extractPeaks` | `(buffer: AudioBuffer, samples?: number) => number[]` | The player's own peak extraction, for code that decodes audio itself and wants identical drawings (1.29.0+). |
+| `encodeCompactPeaks` | `(peaks: readonly number[]) => string` | **2.0.** Encodes 0..1 peaks as a [compact `wp1:` string](/player/waveform-data/#compact-peaks-wp1) (values clamped). 1800 peaks → 2404 characters. |
+| `decodeCompactPeaks` | `(s: string) => number[]` | **2.0.** Decodes a `wp1:` string to 0..1 peaks. Malformed input returns `[]`; never throws. |
 
 ```js
 const label = WaveformPlayer.utils.formatTime(95); // '1:35'
@@ -445,7 +488,13 @@ const label = WaveformPlayer.utils.formatTime(95); // '1:35'
 | `load(url)` | both | `Promise<void>` |
 | `loadTrack(url, title?, artist?, options?)` | both | `Promise<void>` |
 | `setVolume(volume)` | self | `void` |
+| `getVolume()` | self | `number \| null` |
+| `setMuted(muted)` | self | `void` |
 | `setPlaybackRate(rate)` | self | `void` |
+| `toggleLoop(force?)` | self | `boolean` |
+| `setLoop(start, end)` | self | `void` |
+| `loopMarker(index)` | self | `void` |
+| `clearLoop()` | self | `void` |
 | `setWaveformData(data)` | both | `Promise<boolean> \| void` |
 | `setActiveMarker(index)` | both | `void` |
 | `resizeCanvas()` | both | `void` |

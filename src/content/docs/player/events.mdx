@@ -7,7 +7,7 @@ sidebar:
 
 import { Tabs, TabItem, Aside, Card, CardGrid, Steps } from '@astrojs/starlight/components';
 
-The player exposes its lifecycle two ways. Pick whichever fits how you wired the
+The player exposes its lifecycle three ways. Pick whichever fits how you wired the
 player up:
 
 - **`on*` constructor callbacks** — passed as options when you build the player.
@@ -17,36 +17,48 @@ player up:
   player's container element. Best for declarative (`data-waveform-player`)
   players you never constructed by hand, for attaching/detaching listeners after
   init, or for delegating from an ancestor.
+- **Events on the instance** (2.0) — a `WaveformPlayer` is an `EventTarget`, so
+  `player.addEventListener('play', …)` works and is typed. Best when you hold
+  the instance and want standard add/remove semantics instead of one callback
+  slot. See [Listening on the instance](#listening-on-the-instance-20).
 
-Both paths fire from the same internal points, so a given moment (say, playback
-starting) triggers **both** the `onPlay` callback **and** the
-`waveformplayer:play` event. Use one, the other, or both.
+All three paths fire from the same internal points, so a given moment (say, playback
+starting) triggers the `onPlay` callback, the instance's `play` event **and** the
+`waveformplayer:play` event. Use any of them.
 
 :::tip
 Every `waveformplayer:*` event **bubbles**. You can listen on the player's
 container, or on any ancestor (including `document`) and read
-`event.detail.player` to know which instance fired.
+`event.detail.player` to know which instance fired. In 2.0 the lifecycle events
+(all but `ready`, `destroy` and the `request-*` events) are also **composed**, so
+they leave a shadow root, and every `waveformplayer:*` event is typed on
+`HTMLElementEventMap` / `DocumentEventMap`.
 :::
 
 ## At a glance
 
-| Moment | Callback | DOM event |
-| --- | --- | --- |
-| Ready (post-construct) | — | `waveformplayer:ready` |
-| Waveform drawn | `onLoad` | — |
-| Play | `onPlay` | `waveformplayer:play` |
-| Pause | `onPause` | `waveformplayer:pause` |
-| Progress tick | `onTimeUpdate` | `waveformplayer:timeupdate` |
-| Track ended | `onEnd` | `waveformplayer:ended` |
-| Load/decode/audio error | `onError` | — |
-| Destroyed | — | `waveformplayer:destroy` |
-| Play requested (external) | — | `waveformplayer:request-play` |
-| Pause requested (external) | — | `waveformplayer:request-pause` |
-| Seek requested (external) | — | `waveformplayer:request-seek` |
+| Moment | Callback | Instance event (2.0) | DOM event |
+| --- | --- | --- | --- |
+| Ready (post-construct) | — | — | `waveformplayer:ready` |
+| Waveform drawn | `onLoad` | `load` | `waveformplayer:load` (2.0) |
+| Play | `onPlay` | `play` | `waveformplayer:play` |
+| Pause | `onPause` | `pause` | `waveformplayer:pause` |
+| Progress tick | `onTimeUpdate` | `timeupdate` | `waveformplayer:timeupdate` |
+| Track ended | `onEnd` | `ended` | `waveformplayer:ended` |
+| Load/decode/audio error | `onError` | `error` | `waveformplayer:error` (2.0) |
+| Lock-screen next / previous | `onNextTrack` / `onPreviousTrack` | `next` / `previous` | `waveformplayer:next` / `previous` (2.0) |
+| Seek landed (self) | — | `seek` | `waveformplayer:seek` (2.0) |
+| Rate changed (self) | — | `ratechange` | `waveformplayer:ratechange` (2.0) |
+| Volume or mute changed (self) | — | `volumechange` | `waveformplayer:volumechange` (2.0) |
+| Loop state changed (self) | — | `loop` | `waveformplayer:loop` (2.0) |
+| Destroyed | — | — | `waveformplayer:destroy` |
+| Play requested (external) | — | — | `waveformplayer:request-play` |
+| Pause requested (external) | — | — | `waveformplayer:request-pause` |
+| Seek requested (external) | — | — | `waveformplayer:request-seek` |
 
-Note the asymmetry: `onLoad` / `onError` (and the Media Session
-`onNextTrack` / `onPreviousTrack`) have **no** DOM-event twin, and
-`ready` / `destroy` / `request-*` have **no** callback twin.
+In 1.x, `onLoad`, `onError`, `onNextTrack` and `onPreviousTrack` had no DOM
+event; in 2.0 every callback has one. `ready`, `destroy` and `request-*` still
+have no callback twin. The callbacks run exactly as before.
 
 ## Constructor callbacks
 
@@ -106,10 +118,17 @@ track URL.
 | Event | `detail` shape | Cancelable | Modes |
 | --- | --- | --- | --- |
 | `waveformplayer:ready` | `{ player, url }` | no | both |
+| `waveformplayer:load` (2.0) | `{ player, url }` | no | both |
 | `waveformplayer:play` | `{ player, url }` | no | both |
 | `waveformplayer:pause` | `{ player, url }` | no | both |
 | `waveformplayer:timeupdate` | `{ player, currentTime, duration, progress, url }` | no | both |
 | `waveformplayer:ended` | `{ player, url, currentTime, duration }` | no | both |
+| `waveformplayer:error` (2.0) | `{ player, url, error }` | no | both |
+| `waveformplayer:next` / `previous` (2.0) | `{ player, url }` | no | self (lock-screen controls) |
+| `waveformplayer:seek` (2.0) | `{ player, url, currentTime, duration }` | no | self only |
+| `waveformplayer:ratechange` (2.0) | `{ player, url, playbackRate }` | no | self only |
+| `waveformplayer:volumechange` (2.0) | `{ player, url, volume, muted }` | no | self only |
+| `waveformplayer:loop` (2.0) | `{ player, url, loop, start, end }` | no | self only |
 | `waveformplayer:destroy` | `{ player, url }` | no | both |
 | `waveformplayer:request-play` | track detail (see below) | **yes** | external only |
 | `waveformplayer:request-pause` | track detail | **yes** | external only |
@@ -118,6 +137,14 @@ track URL.
 In the `timeupdate` detail, `progress` is a `0..1` fraction of the track
 (`currentTime / duration`), handy for driving a progress bar without dividing
 yourself. The `ended` detail reports `currentTime` equal to `duration`.
+
+`seek`, `ratechange` and `volumechange` come from the player's own `<audio>`,
+so they don't fire in external mode. `seek` also fires when a loop wraps (a
+whole-track loop's wrap is a seek to 0). In the `loop` detail, `loop` is
+whole-track looping and `start` / `end` are the section loop, or `null` when
+there is none. The detail types are exported (`WaveformSeekEventDetail`,
+`WaveformRateChangeEventDetail`, `WaveformVolumeChangeEventDetail`,
+`WaveformLoopEventDetail`, …).
 
 In self mode `timeupdate` (and `onTimeUpdate`) is emitted once per animation
 frame. Browsers stop the frame loop in background tabs while the audio plays on,
@@ -165,6 +192,32 @@ document.addEventListener('waveformplayer:play', (e) => {
   `DOMContentLoaded`, before auto-init runs) or delegate from `document`.
 </Aside>
 
+### Listening on the instance (2.0)
+
+`WaveformPlayer` extends `EventTarget`. The instance dispatches plain `Event`s —
+`load`, `play`, `pause`, `ended`, `error`, `timeupdate`, `next`, `previous`,
+`seek`, `ratechange`, `volumechange` and `loop` — with no `detail`; read what you
+need from the player itself.
+
+```js
+const player = new WaveformPlayer('#player', { url: '/audio/track.mp3' });
+
+const onSeek = () => console.log('now at', player.audio.currentTime);
+player.addEventListener('seek', onSeek);
+player.addEventListener('ended', () => playNext(), { once: true });
+
+// Standard removal — no callback slot to overwrite.
+player.removeEventListener('seek', onSeek);
+```
+
+:::note[Two `timeupdate` rates]
+The instance's `timeupdate` follows the media element's own rate (about 4Hz,
+and on seeks) — in external mode, once per `setProgress()`. The container's
+`waveformplayer:timeupdate` still fires **every animation frame** while
+playing, exactly as in 1.x, so code that animates from it (and
+waveform-tracker, which counts listening time from it) is unchanged.
+:::
+
 ### `waveformplayer:destroy`
 
 `destroy()` emits `waveformplayer:destroy` **first**, before tearing anything
@@ -206,6 +259,7 @@ All three carry the full **track detail** object (the seek event adds
   artwork:  string | null,
   markers:  Array<{ time: number, label: string, color?: string }>,
   waveform: number[] | string | null,
+  duration: number | null,   // 2.0: the `duration` option, so a controller can show the length early
   id:       string,
   player:   WaveformPlayer
 }
@@ -263,8 +317,8 @@ audio.addEventListener('timeupdate', () =>
 <Aside type="caution">
   `request-*` events never fire in the default `audioMode: 'self'` — there, the
   player owns its `<audio>` and acts directly. Conversely, in external mode the
-  audio-bound methods (`seekTo`, `seekToPercent`, `setVolume`,
-  `setPlaybackRate`) are no-ops. See [Player options](/player/options/) for the
+  audio-bound methods (`seekTo`, `seekToPercent`, `setVolume`, `setMuted`,
+  `setPlaybackRate`, the loop methods) are no-ops. See [Player options](/player/options/) for the
   full `audioMode` contract.
 </Aside>
 

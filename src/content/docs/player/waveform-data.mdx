@@ -15,14 +15,15 @@ This is the single biggest performance lever in the library, and the recommended
 
 ## The `waveform` option
 
-Point the player at peak data through the `waveform` option (or the `data-waveform` attribute). It accepts four shapes:
+Point the player at peak data through the `waveform` option (or the `data-waveform` attribute). It accepts five shapes:
 
 | Shape | Example | When to use |
 | --- | --- | --- |
 | `.json` URL | `'/audio/track.json'` | The standard path — fetched, peaks + markers + `bpm` applied, decode skipped. A `?query` / `#hash` after `.json` is fine (1.28.0+). |
 | Inline `number[]` | `[0.2, 0.37, 0.41, 0.55]` | Peaks already in memory (e.g. embedded in a JS payload). |
 | JSON-array string | `'[0.2,0.37,0.41,0.55]'` | Peaks serialized into a single attribute value. |
-| Comma-separated string | `'0.2,0.37,0.41,0.55'` | Compact inline form, no brackets. |
+| Comma-separated string | `'0.2,0.37,0.41,0.55'` | Inline form, no brackets. |
+| Compact `wp1:` string (2.0) | `'wp1:M15pjA'` | The smallest inline form — a quarter of a JSON array. See [below](#compact-peaks-wp1). |
 
 In every case the Web Audio decode pass is **skipped** — the player normalizes whatever you give it straight onto the canvas. The one exception is a `.json` URL that can't be used (see [below](#the-getpeaksurl-helper)): from 1.28.0 the player then decodes the audio as if no peaks had been given.
 
@@ -83,6 +84,29 @@ const player = new WaveformPlayer('#player', {
 
 The auto-initialiser scans for `[data-waveform-player]` on `DOMContentLoaded`, so the declarative form needs no JS at all. See [Data attributes](/player/data-attributes/) for the full attribute contract.
 
+## Compact peaks (`wp1:`)
+
+**2.0.** A compact peaks string is `"wp1:"` followed by base64url (RFC 4648 §5, `A–Z a–z 0–9 - _`, no padding) of **one byte per peak**, `round(peak × 255)`. 1800 peaks are 2,404 characters — about a quarter of the same peaks as a JSON array — which is small enough to put straight into the page:
+
+```html
+<div
+  data-waveform-player
+  data-url="/audio/track.mp3"
+  data-waveform="wp1:AAAAAAAAAAAAAbxcUcRoU0I9ODAqIx8d…"
+></div>
+```
+
+It is accepted everywhere peaks are: the `waveform` option, `data-waveform`, [`setWaveformData()`](/player/methods/#setwaveformdatadata), [`loadTrack()`](/player/methods/#loadtrackurl-title-artist-options), and a `.json` sidecar (as its `peaks` field, or as the whole file). A malformed string counts as unusable peaks, never an error: the player falls back as it would for any peaks it can't use. Eight bits per peak is far finer than a canvas bar can show.
+
+Make them at build time with [WaveformGen's `--compact`](#generating-peaks-with-waveformgen), or in code:
+
+```js
+const s = WaveformPlayer.utils.encodeCompactPeaks([0.1, 0.4, 0.9, 0.6, 0.2]); // 'wp1:GmbmmTM'
+WaveformPlayer.utils.decodeCompactPeaks(s); // [0.1019…, 0.4, 0.9019…, 0.6, 0.2] — byte / 255
+```
+
+WaveformGen's library exports the same `encodeCompactPeaks` / `decodeCompactPeaks` for Node (its decoder throws on malformed input; the player's returns `[]`). Pair compact peaks with [`duration`](/player/options/#source) and `preload: 'none'` for a page that draws everything and downloads no audio until play: see [Zero-bandwidth pages](/player/zero-bandwidth/).
+
 ## The JSON shape
 
 The fetched file is a single object. Only `peaks` is required:
@@ -98,11 +122,13 @@ The fetched file is a single object. Only `peaks` is required:
 }
 ```
 
-- **`peaks`** — `number[]`, each value a normalized amplitude in `0..1`. This is the waveform.
+- **`peaks`** — `number[]`, each value a normalized amplitude in `0..1`, or a compact `wp1:` string (2.0). This is the waveform.
 - **`bpm`** — optional number, written by WaveformGen's `--bpm`. Feeds the [BPM badge](/player/data-attributes/#bpm) (with `showBPM`) when no `bpm` option is set — the option still wins (1.28.0+).
 - **`markers`** — optional `Array<{ time: number, label: string, color?: string }>`. Embedded markers are applied automatically **only if you have not already set `markers`** on the player — an explicit `markers` option/attribute wins. See [Markers](/player/data-attributes/#markers).
 
-A bare top-level array is also accepted (`[0.2, 0.37, ...]`) and treated as the peaks list, but the object form is preferred because it carries markers.
+A bare top-level array (or, in 2.0, a bare `wp1:` string) is also accepted and treated as the peaks list, but the object form is preferred because it carries markers.
+
+WaveformGen's `--compact` also writes a `duration` field. The player does **not** read `duration` from a sidecar — by the time the sidecar is fetched the length is no longer needed up front. To show the length before the audio loads, pass the [`duration` option](/player/options/#source) (`data-duration`) in the markup.
 
 <Aside type="note">
   Before 1.28.0 the player ignored an embedded `bpm` field; surface it through the [`bpm` option](/player/data-attributes/#bpm) or `data-bpm` there. A `bpm` option shows even when peaks are pre-supplied, and always wins over the sidecar and auto-detection.
@@ -143,6 +169,8 @@ A bare top-level array is also accepted (`[0.2, 0.37, ...]`) and treated as the 
 | `--bpm` | off | Detect tempo and write a `bpm` field. |
 | `--recursive` | off | Scan sub-directories. |
 | `--quiet` | off | Suppress progress and the summary. Errors still go to stderr (2.0.0+). |
+| `--compact` | off | Write peaks as a `wp1:` string and add `duration` (3.0.0+). |
+| `--html` | off | Print a `<div data-waveform-player>` snippet per file instead of JSON (3.0.0+). |
 
 From WaveformGen 2.0.0 any failed file makes the run exit `1`, so a corrupt file fails a `prebuild` step instead of shipping a missing JSON. Values can also be written `--flag=value`. See the [WaveformGen CLI reference](/extensions/gen/) for exit codes and the full flag list.
 
@@ -163,6 +191,20 @@ Drop a `*.markers.txt` file next to the audio and WaveformGen folds the markers 
 ```
 
 Timestamps accept `SS`, `MM:SS`, and `H:MM:SS`. Lines starting with `#` are ignored. The resulting `markers` array lands in the JSON and is applied by the player on fetch (unless you set `markers` explicitly).
+
+### Compact output and HTML snippets
+
+`--compact` writes `peaks` as one `wp1:` string and adds `duration` (seconds) to each JSON file — a typical file drops from ~17.7 KB to ~2.4 KB. `--html` prints a ready-to-paste player per file — compact peaks, `data-duration`, `data-preload="none"` and a title — so the page needs no sidecar requests at all:
+
+```bash
+npx @arraypress/waveform-gen ./public/audio/*.mp3 --html --base-url /audio/
+```
+
+```html
+<div data-waveform-player data-url="/audio/little-paris.mp3" data-waveform="wp1:AAAAAAAAAAAAAbxc…" data-duration="122" data-preload="none" data-title="little-paris"></div>
+```
+
+Both need WaveformGen 3.0 and a 2.0 player. See [Zero-bandwidth pages](/player/zero-bandwidth/) and the [WaveformGen reference](/extensions/gen/).
 
 ### Piping inline peaks
 
@@ -249,7 +291,7 @@ This still performs a Web Audio decode — it is the runtime counterpart to the 
     A peaks JSON is a few KB. You fetch numbers, not megabytes of audio, to draw the waveform.
   </Card>
   <Card title="Render before audio">
-    The waveform paints from JSON while the audio is still `preload="metadata"` — the UI is ready before playback is.
+    The waveform paints from peaks before any audio has loaded — the UI is ready before playback is.
   </Card>
   <Card title="Scales to catalogues">
     Lists of dozens of players each skipping a decode is the difference between instant and janky.
@@ -258,7 +300,7 @@ This still performs a Web Audio decode — it is the runtime counterpart to the 
 </CardGrid>
 
 <Aside type="tip">
-  Pair pre-computed peaks with `preload="metadata"` (the default) so the audio file isn't downloaded until the user hits play. The waveform comes from the small JSON; the audio bytes load on demand. See the [`preload` option](/player/options/).
+  Pre-computed peaks skip the decode, but with `preload="metadata"` (the default) the browser still fetches the start of every audio file to learn its length. For a long list, go further: `preload="none"` plus the [`duration` option](/player/options/#source) shows the length without touching the audio, so nothing is downloaded until the user hits play. See [Zero-bandwidth pages](/player/zero-bandwidth/).
 </Aside>
 
 ## Hosting the audio: byte ranges

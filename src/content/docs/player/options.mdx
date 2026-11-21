@@ -68,16 +68,16 @@ Sources merge in the order **defaults &lt; `data-*` attributes &lt; constructor 
 
 ### Aliases
 
-A handful of options accept a shorthand. The **canonical name always wins** if both are present. (For `data-color` / `data-theme` that's true from 1.28.0 — earlier versions applied the legacy attribute last, so it won. `data-color` also accepts a JSON gradient stop array from 1.28.0, like `data-waveform-color`.)
+A couple of options accept a shorthand. The **canonical name always wins** if both are present.
 
 | Alias | Canonical | Where |
 | --- | --- | --- |
 | `src` | `url` | JS + `data-src` |
 | `style` | `waveformStyle` | JS + `data-style` |
-| `data-color` | `waveformColor` | `data-*` only (legacy) |
-| `data-theme` | `colorPreset` | `data-*` only (legacy) |
 
-The drawer also accepts singular `waveformStyle` values — `bar`, `block`, `dot` are aliases for `bars`, `blocks`, `dots`.
+:::caution[Removed in 2.0]
+The 1.x `data-color` and `data-theme` aliases are gone: use `data-waveform-color` and `data-color-preset`. See [Migrating from 1.x](/getting-started/migrating-from-1x/#removed).
+:::
 
 :::caution[`style` is overloaded in framework wrappers]
 In plain JS and `data-*`, `style`/`data-style` is the waveform-style alias. In every framework wrapper — Astro, React, Vue and Svelte — `style` stays the framework's CSS-style attribute on the host element and is never forwarded as an option, so there you must use `waveformStyle` for the visual style. See [the wrapper docs](/getting-started/installation/).
@@ -93,9 +93,11 @@ What to load and how to drive it.
 | --- | --- | --- | --- |
 | `url` | `''` | `string` | Audio file URL (alias: `src`). Empty means no auto-load. `data-url`. |
 | `src` | — | `string` | Shorthand alias for `url`; canonical `url` wins if both set. `data-src`. |
-| `waveform` | `null` | `number[] \| string \| null` | Pre-computed peaks: inline array, comma-separated string, JSON-array string, or a `.json` URL (fetched; embedded markers applied). Skips Web Audio decode. Reset per-track in `loadTrack`. `data-waveform`. |
+| `waveform` | `null` | `number[] \| string \| null` | Pre-computed peaks: inline array, comma-separated string, JSON-array string, [compact `wp1:` string](/player/waveform-data/#compact-peaks-wp1) (2.0), or a `.json` URL (fetched; embedded markers applied). Skips Web Audio decode. Reset per-track in `loadTrack`. `data-waveform`. |
 | `samples` | `1800` | `number` | Source peak resolution decoded; resampled to fit the visible bars (fidelity headroom, **not** bar count). `data-samples`. |
-| `preload` | `'metadata'` | `'auto' \| 'metadata' \| 'none'` | `<audio>` preload hint (self mode). With `'none'` the browser fetches nothing until play, so duration and markers only resolve then — pair it with pre-computed peaks so the waveform still paints immediately. `data-preload`. |
+| `preload` | `'metadata'` | `'auto' \| 'metadata' \| 'none'` | `<audio>` preload hint (self mode). With `'none'` the browser fetches nothing until play — pair it with pre-computed peaks and `duration` so the waveform, the total time and the markers still show at once ([Zero-bandwidth pages](/player/zero-bandwidth/)). `data-preload`. |
+| `duration` | `null` | `number \| null` | **2.0.** The track's length in seconds, known before the audio says so. Until the audio's metadata arrives (with `preload: 'none'`, not until play) it is the total in the time readout, places markers, and drives hover time, the seek slider and the Media Session scrubber; a seek in that window lands once the audio can seek. The real duration replaces it. Must be &gt; 0, else ignored with a warning. Per-track: `loadTrack()` resets it unless the call supplies one. In external mode it stands in until the first `setProgress()`. `data-duration`. |
+| `lazy` | `false` | `boolean` | **2.0.** Build the player now, but assign the audio source, fetch peaks, decode and draw only when it comes within 200px of the viewport (one shared IntersectionObserver). Playing, seeking, `load()` or `loadTrack()` loads it at once. See [Lazy loading](/player/lazy-loading/). `data-lazy`. |
 | `crossOrigin` | `null` | `'anonymous' \| 'use-credentials' \| null` | CORS mode for the `<audio>` (self mode). Unset by default so the player behaves like a plain `<audio>` and never forces a CORS request — setting it breaks playback of media on origins without `Access-Control-Allow-Origin` (default-config S3/CDN). Set only if you need it. `data-cross-origin`. |
 | `audioMode` | `'self'` | `'self' \| 'external'` | `'self'` owns an `<audio>`; `'external'` is visualization-only. `data-audio-mode`. |
 | `playbackRate` | `1` | `number` | Initial playback rate (self mode). Kept across loads and `loadTrack()` (1.28.0+; earlier versions dropped back to 1× on the first load). `data-playback-rate`. |
@@ -126,7 +128,7 @@ Layout, button, and waveform-style geometry.
 | Option | Default | Type | Notes |
 | --- | --- | --- | --- |
 | `height` | `64` | `number` | Waveform height in px (canvas + container). `data-height`. |
-| `waveformStyle` | `'mirror'` | `'bars' \| 'mirror' \| 'line' \| 'blocks' \| 'dots' \| 'seekbar'` | Visual style (alias: `style`). Singular `bar`/`block`/`dot` also accepted. `data-waveform-style`. |
+| `waveformStyle` | `'mirror'` | `'bars' \| 'mirror' \| 'line' \| 'blocks' \| 'dots' \| 'seekbar'` | Visual style (alias: `style`). `data-waveform-style`. |
 | `barWidth` | `2` | `number` | Bar width px; minimum `0.1` (1.28.0+ — smaller values, including `0`, are raised to it). Overridden by per-style defaults when neither option nor `data-*` set it. `data-bar-width`. |
 | `barSpacing` | `0` | `number` | Gap between bars px. Overridden by per-style defaults when unset. `data-bar-spacing`. |
 | `barRadius` | `1` | `number` | Rounded bar-cap radius px (bars/mirror only); `0` = square. `data-bar-radius`. |
@@ -163,8 +165,8 @@ Every color option defaults to `null`, meaning "follow the active color preset".
 
 | Option | Default | Type | Notes |
 | --- | --- | --- | --- |
-| `colorPreset` | `null` | `'dark' \| 'light' \| null` | `null`/invalid = auto-detect via `detectColorScheme()`; an explicit value disables auto-theme re-detection. `data-color-preset` (legacy: `data-theme`). |
-| `waveformColor` | `null` | `string \| string[] \| null` | Unplayed colour; `null` = preset. Array = gradient stops (axis via `waveformGradient`), e.g. `['#fafafa','#71717a']`. `data-waveform-color` (legacy: `data-color`). |
+| `colorPreset` | `null` | `'dark' \| 'light' \| null` | `null`/invalid = auto-detect via `detectColorScheme()`; an explicit value disables auto-theme re-detection. `data-color-preset`. |
+| `waveformColor` | `null` | `string \| string[] \| null` | Unplayed colour; `null` = preset. Array = gradient stops (axis via `waveformGradient`), e.g. `['#fafafa','#71717a']`. `data-waveform-color`. |
 | `progressColor` | `null` | `string \| string[] \| null` | Played-through colour; `null` = preset; array = gradient. `data-progress-color`. |
 | `waveformGradient` | `'vertical'` | `'vertical' \| 'horizontal' \| 'diagonal'` | Axis for gradient stop arrays: `'vertical'` (top→bottom), `'horizontal'` (hue sweep across the wave), `'diagonal'`. Ignored for single colours. `data-waveform-gradient`. |
 
@@ -216,6 +218,17 @@ Visibility toggles, track metadata, markers, accessibility, and callbacks.
 | `singlePlay` | `true` | `boolean` | Pause every other instance when this one plays. `data-single-play`. |
 | `playOnSeek` | `true` | `boolean` | Start playback when seeking via a marker click while paused. `data-play-on-seek`. |
 | `enableMediaSession` | `true` | `boolean` | Register system Media Session controls (self mode only). `data-enable-media-session`. |
+| `loop` | `false` | `boolean` | **2.0.** Loop the whole track through the `<audio>` element's own `loop`: the wrap is seamless, `ended` / `onEnd` don't fire on it, and `seek` does. Self mode only. See [Looping](/player/looping/). `data-loop`. |
+| `showLoop` | `false` | `boolean` | **2.0.** A loop toggle button (`aria-pressed`, named by `loopLabel`) in the meta row. Needs `showInfo`; not rendered in external mode. `data-show-loop`. |
+| `showVolume` | `false` | `boolean` | **2.0.** A mute toggle (`aria-pressed`, `muteLabel`) and a 0..1 volume slider (`volumeLabel`, spoken as a percentage) in the meta row. Both follow `setVolume()`, `setMuted()`, the `m` key and any other change. Where scripted volume is ignored (iOS) the slider is hidden and mute stays. Needs `showInfo`; not rendered in external mode. `data-show-volume`. |
+| `volume` | `null` | `number \| null` | **2.0.** Initial volume, 0..1 (clamped). `null` leaves the element's default. Ignored in external mode. `data-volume`. |
+| `showDownload` | `false` | `boolean` | **2.0.** A real `<a href download>` in the meta row, named by `downloadLabel`, for `downloadUrl` saved as `downloadName`. Follows the track through `loadTrack()`; hidden while there is no http(s) or relative URL. Works in both modes; needs `showInfo`. `data-show-download`. |
+| `downloadUrl` | `null` | `string \| null` | **2.0.** What the download link points at (default: the track `url`) — e.g. a full-quality file when the player streams a preview. Per-track. `data-download-url`. |
+| `downloadName` | `null` | `string \| null` | **2.0.** File name suggested for the download (default: the url's file name). Per-track. `data-download-name`. |
+
+:::caution[Cross-origin downloads]
+Browsers honour the `download` attribute only for same-origin URLs (and `blob:` / `data:`). For a cross-origin `downloadUrl` they ignore it and navigate to the file — usually playing it in a new page — unless the server sends `Content-Disposition: attachment`. Serve downloads from your own origin, or with that header.
+:::
 
 :::caution[`showBPM` &rarr; `data-show-bpm`]
 This is the one option whose `data-*` key isn't a literal kebab-casing of the JS name. The JS option is `showBPM`; the attribute is `data-show-bpm`.
@@ -264,6 +277,10 @@ new WaveformPlayer('#player', {
 | `seekValueText` | `null` | `string \| null` | Template for the slider's spoken `aria-valuetext`; `%1$s` is the current time, `%2$s` the total (both `M:SS`). Sequential `%s` and reordered positional args supported. Falls back to `'%1$s of %2$s'`. `data-seek-value-text`. |
 | `playPauseLabel` | `'Play/Pause'` | `string` | Play button `aria-label` (screen-reader name). Localize for non-English UIs. `data-play-pause-label`. |
 | `speedLabel` | `'Playback speed'` | `string` | Speed menu `aria-label`, and the speed button's after its visible rate (`"1.5x Playback speed"`, since 1.30.0). Localize for non-English UIs. `data-speed-label`. |
+| `loopLabel` | `'Loop'` | `string` | **2.0.** Accessible name of the `showLoop` toggle. Localize for non-English UIs. `data-loop-label`. |
+| `volumeLabel` | `'Volume'` | `string` | **2.0.** Accessible name of the `showVolume` slider. `data-volume-label`. |
+| `muteLabel` | `'Mute'` | `string` | **2.0.** Accessible name of the `showVolume` mute toggle. `data-mute-label`. |
+| `downloadLabel` | `'Download'` | `string` | **2.0.** Accessible name of the `showDownload` link. `data-download-label`. |
 
 :::tip[Keyboard seeking]
 With `accessibleSeek` (the default), the waveform is focusable and keyboard-seekable: Arrows &plusmn;5s, PageUp/PageDown &plusmn;10s, Home/End to the edges, digits 0–9 jump to tenths, and Space toggles playback. See [Accessibility](/player/accessibility/).
@@ -304,11 +321,13 @@ When you swap tracks at runtime with [`loadTrack()`](/player/methods/#loadtracku
 - `waveform` &rarr; `null` (otherwise the previous track's peaks would redraw)
 - `markers` &rarr; `[]`
 - `bpm` &rarr; `null` and `album` &rarr; `''` unless the call passes them (1.28.0+ — the previous track's tempo badge and lock-screen album used to carry over)
+- `duration`, `downloadUrl` and `downloadName` &rarr; `null` unless the call passes them (2.0)
+- a section loop ([`setLoop()`](/player/looping/)) is cleared; whole-track `loop` carries on
 - `title` &rarr; `null` keeps the current title; `''` derives it from the URL
 - `artist` &rarr; passing `''` clears the row
 
 :::caution[`mergeOptions` skips `null`]
-The internal merge ignores `null`/`undefined`, so a later source can't clear an earlier value by passing `null`. That's exactly why `loadTrack` explicitly resets `waveform`, `markers`, `bpm` and `album` per track. If you add your own per-track options, reset them the same way.
+The internal merge ignores `null`/`undefined`, so a later source can't clear an earlier value by passing `null`. That's exactly why `loadTrack` explicitly resets `waveform`, `markers`, `bpm`, `album`, `duration`, `downloadUrl` and `downloadName` per track. If you add your own per-track options, reset them the same way.
 :::
 
 ---
@@ -322,7 +341,9 @@ Every attribute the parser recognises, including the marker and library-managed 
 | `data-waveform-player` | (init marker) | Presence triggers auto-init. |
 | `data-waveform-initialized` | (set by library) | `"true"` flag for idempotency — not author-set. |
 | `data-url` / `data-src` | `url` | `data-url` wins. |
-| `data-waveform` | `waveform` | peaks string / JSON array / `.json` URL. |
+| `data-waveform` | `waveform` | peaks string / JSON array / `wp1:` compact string / `.json` URL. |
+| `data-duration` | `duration` | float, seconds (&gt; 0). |
+| `data-lazy` | `lazy` | bool. |
 | `data-samples` | `samples` | int. |
 | `data-preload` | `preload` | string. |
 | `data-cross-origin` | `crossOrigin` | string (`anonymous` / `use-credentials`). |
@@ -341,8 +362,8 @@ Every attribute the parser recognises, including the marker and library-managed 
 | `data-button-align` | `buttonAlign` | string. |
 | `data-show-playback-speed` | `showPlaybackSpeed` | bool. |
 | `data-playback-rates` | `playbackRates` | JSON array (`[0.5,1,2]`) or a bare list (`0.5, 1, 2`). |
-| `data-color-preset` / `data-theme` | `colorPreset` | `data-color-preset` wins (1.28.0+); `data-theme` is legacy. |
-| `data-waveform-color` / `data-color` | `waveformColor` | CSS colour or JSON gradient array (either name, 1.28.0+); `data-waveform-color` wins (1.28.0+); `data-color` is legacy. |
+| `data-color-preset` | `colorPreset` | string (`dark` \| `light`). |
+| `data-waveform-color` | `waveformColor` | CSS colour or JSON gradient array. |
 | `data-progress-color` | `progressColor` | CSS colour or JSON gradient array. |
 | `data-autoplay` | `autoplay` | bool (`'true'`). |
 | `data-show-controls` | `showControls` | bool. |
@@ -355,6 +376,13 @@ Every attribute the parser recognises, including the marker and library-managed 
 | `data-single-play` | `singlePlay` | bool. |
 | `data-play-on-seek` | `playOnSeek` | bool. |
 | `data-enable-media-session` | `enableMediaSession` | bool. |
+| `data-loop` | `loop` | bool. |
+| `data-show-loop` | `showLoop` | bool. |
+| `data-show-volume` | `showVolume` | bool. |
+| `data-volume` | `volume` | float, 0..1 (clamped). |
+| `data-show-download` | `showDownload` | bool. |
+| `data-download-url` | `downloadUrl` | string. |
+| `data-download-name` | `downloadName` | string. |
 | `data-show-markers` | `showMarkers` | bool. |
 | `data-markers` | `markers` | JSON (warn + skip on bad JSON). |
 | `data-accessible-seek` | `accessibleSeek` | bool. |
@@ -362,6 +390,10 @@ Every attribute the parser recognises, including the marker and library-managed 
 | `data-seek-value-text` | `seekValueText` | string (printf template). |
 | `data-play-pause-label` | `playPauseLabel` | string. |
 | `data-speed-label` | `speedLabel` | string. |
+| `data-loop-label` | `loopLabel` | string. |
+| `data-volume-label` | `volumeLabel` | string. |
+| `data-mute-label` | `muteLabel` | string. |
+| `data-download-label` | `downloadLabel` | string. |
 | `data-title` | `title` | string. |
 | `data-artist` | `artist` | string. |
 | `data-album` | `album` | string. |
