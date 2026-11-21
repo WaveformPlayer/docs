@@ -123,6 +123,12 @@ The package ships an IIFE (`waveform-sounds.js`, minified `waveform-sounds.min.j
 
 </Steps>
 
+Prefer a tag? [`<waveform-sounds>`](/extensions/sounds/element/) (2.1.0+) takes the same options as attributes, with or without `data-`:
+
+```html
+<waveform-sounds manifest="/previews/sounds.json" page-size="100"></waveform-sounds>
+```
+
 Or construct it yourself with a `sounds` array — no manifest, no fetch:
 
 ```js
@@ -138,7 +144,7 @@ const list = new WaveformSounds('#pack', {
 ```
 
 <Aside type="note" title="Auto-init and how to opt out">
-Importing (or loading) the main entry initialises every `[data-waveform-sounds]` element on `DOMContentLoaded`, or straight away if the document is already parsed. Each element is marked `data-ws-initialized="true"` and is never initialised twice; a failure is logged with `console.error`, not thrown. Turn it off page-wide with `<html data-waveform-autoinit="false">` (the family's switch), or import `@arraypress/waveform-sounds/no-autoinit` and call [`WaveformSounds.init()`](/extensions/sounds/api/#static-methods) yourself — after adding markup dynamically, for example.
+Importing (or loading) the main entry initialises every `[data-waveform-sounds]` element on `DOMContentLoaded`, or straight away if the document is already parsed. Each element is marked `data-ws-initialized="true"` and is never initialised twice; a failure is logged with `console.error`, not thrown. The same import registers [`<waveform-sounds>`](/extensions/sounds/element/) (2.1.0+). Turn both off page-wide with `<html data-waveform-autoinit="false">` (the family's switch), or import `@arraypress/waveform-sounds/no-autoinit` and call [`WaveformSounds.init()`](/extensions/sounds/api/#static-methods) yourself — after adding markup dynamically, for example.
 </Aside>
 
 ## Where the sounds come from
@@ -181,7 +187,7 @@ A bare array of sounds works too. `version` is informational. `peakScale` is the
 | `key` | `string` | Musical key in any common spelling — `"F minor"`, `"Fmin"`, `"f m"` → `Fm`; `"C# Major"`, `"C♯"` → `C#`. Shown and filtered in that short form; an unparseable key is kept as written. |
 | `duration` | `number \| string` | Length: seconds (`8.02`) or `"m:ss"` / `"h:mm:ss"`. Shown as `m:ss`, or in tenths under a second (`0.4s`, 0.1.3+). |
 | `tags` | `string[] \| string` | Extra words the search matches. A string is split on commas. |
-| `peaks` | `string \| number[]` | Low-resolution peaks for the row waveform: an 8-bit hex string (two characters per bar, `00`–`ff`) or numbers `0..1`. Without them the row shows a flat line until it's played. |
+| `peaks` | `string \| number[]` | Low-resolution peaks for the row waveform: an 8-bit hex string (two characters per bar, `00`–`ff`), the core's [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) (2.1.0+), or numbers `0..1`. Without them the row shows a flat line until it's played. |
 | `waveform` | `string \| number[]` | Full-resolution peaks for the `strip` layout's docked player — a [`waveform-gen`](/extensions/gen/) `.json` URL or an array. |
 | `download` | `string` | An optional download link for this sound. Rows with one get a download button; rows without carry nothing. |
 | `loop` | `boolean` | `true` for a loop; anything else is a one-shot (the default). Loops get a loop icon, a list with both gets a Loops / One-shots filter, and the Loop toggle repeats only loops. 0.2.0+. See [Loops and one-shots](/extensions/sounds/features/#loops-and-one-shots). |

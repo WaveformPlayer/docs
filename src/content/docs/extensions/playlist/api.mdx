@@ -31,7 +31,8 @@ The constructor resolves the container, verifies `window.WaveformPlayer`, parses
 | `getCurrentTrackIndex(): number` | Zero-based index of the selected track. |
 | `getTracks(): WaveformPlaylistTrack[]` | The parsed track objects (`element`, `index`, `url`, `title`, `artist`, `artwork`, `album`, `duration`, `waveform`, `chapters[]`, `markers[]`). Chapters are sorted by time. |
 | `destroy(): void` | Removes the keydown listener, cancels any pending chapter seek, destroys the player, removes only the nodes and layout classes the playlist added (your own classes stay), un-hides the `[data-track]` elements in place, clears `data-waveform-playlist-initialized`, and nulls `player` / `listElement` / `tracks`. The container can then be initialised again. |
-| `WaveformPlaylist.init()` _(static)_ | Auto-initialise every `[data-waveform-playlist]` not already marked initialised. Per-element errors are caught and `console.error`'d. |
+| `WaveformPlaylist.init()` _(static)_ | Auto-initialise every `[data-waveform-playlist]` not already marked initialised. Since 2.1.0 it also skips a container that already has a playlist built in script (instead of building a second one over it) and a [`<waveform-playlist>`](/extensions/playlist/element/) element (which builds its own). Per-element errors are caught and `console.error`'d. |
+| `WaveformPlaylist.defineElement(name?)` _(static)_ | 2.1.0+. Register the [`<waveform-playlist>` element](/extensions/playlist/element/) (default tag `waveform-playlist`) from the global — for a `<script>` page that opted out of auto-init. Returns the constructor (`undefined` outside a browser); a name already defined is left alone. |
 
 ```js
 playlist.nextTrack();
@@ -121,6 +122,27 @@ The playlist generates a structured DOM you can target for theming. Key hooks:
 <Aside type="note" title="Colour-agnostic">
 Everything derives from `currentColor`, so the playlist fits a light page and a dark one as is. It uses `color-mix(in srgb, currentColor …, transparent)` for tints and `backdrop-filter` on the glyph discs, with responsive tweaks at `max-width: 480px`.
 </Aside>
+
+## Entry points
+
+| Import | What loading it does |
+| --- | --- |
+| `@arraypress/waveform-playlist` | Registers `window.WaveformPlaylist` and the [`<waveform-playlist>` element](/extensions/playlist/element/), and initialises every `[data-waveform-playlist]` on `DOMContentLoaded`. The CDN script does the same. |
+| `@arraypress/waveform-playlist/no-autoinit` | 2.1.0+. The same exports without the import-time side effects: it neither scans for `[data-waveform-playlist]` nor registers `<waveform-playlist>`. |
+
+Both ES entries share one chunk, so an app (or a framework component) importing both still gets one class. Named exports: `WaveformPlaylist` (also the default), `WaveformPlaylistElement` and `defineWaveformPlaylistElement`.
+
+```js
+import WaveformPlaylist, { defineWaveformPlaylistElement } from '@arraypress/waveform-playlist/no-autoinit';
+
+new WaveformPlaylist('#my-playlist', { layout: 'list' }); // build what you own
+WaveformPlaylist.init();                                  // or scan when you're ready
+defineWaveformPlaylistElement();                          // or register the tag
+```
+
+### Opting out of auto-init
+
+The playlist honours the family's switch, [`<html data-waveform-autoinit="false">`](/player/data-attributes/#initialising-only-what-you-control), as the core does: on such a page importing the package (or loading the CDN script) neither scans for `[data-waveform-playlist]` nor registers `<waveform-playlist>`. `WaveformPlaylist.init()`, `WaveformPlaylist.defineElement()` and `defineWaveformPlaylistElement()` still work when the page calls them. (Before 2.1.0 the playlist ignored the switch and built every container anyway.)
 
 ## Cleanup
 

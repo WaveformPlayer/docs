@@ -83,7 +83,7 @@ Pretty-printed (2-space indent) with a trailing newline. Each sound has, in this
 | `key` | When known | From the file name, in the short form (`Fm`, `C#`, `Bb`). Left out otherwise. |
 | `loop` | Loops only | `true` when a folder or the file name has the word "loop" in it ([Loops from the path](#loops-from-the-path), 2.2.0+). Left out for everything else — a one-shot. |
 | `duration` | When decoded | Seconds, to two decimals. |
-| `peaks` | Yes | An 8-bit hex string, two lowercase characters per bar (`00`–`ff`). |
+| `peaks` | Yes | An 8-bit hex string, two lowercase characters per bar (`00`–`ff`). WaveformSounds 2.1.0+ also reads the core's [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) here, but the generator writes hex. |
 | `waveform` | With `--output` | The URL of the sound's full per-file JSON. |
 
 **Peaks.** 64 bars by default (`--manifest-bars`), downsampled from the same normalised peaks the per-file JSON holds by keeping the loudest value in each bucket — so a short transient (a kick, a snare hit) still shows, and the loudest bar is `ff`. The encoding is byte-for-byte WaveformSounds' own [`encodePeaks`](/extensions/sounds/api/#utils): each value clamped to `0..1`, scaled by 255 and rounded. At 64 bars that's 128 characters a sound. There is no `peakScale` in the output — it only applies to integer arrays, and hex needs none.

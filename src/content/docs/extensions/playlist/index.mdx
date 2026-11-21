@@ -93,8 +93,16 @@ Mark a container with `data-waveform-playlist` and add `[data-track]` children. 
 ```
 
 <Aside type="note" title="Auto-init timing">
-Every `[data-waveform-playlist]` element is initialised on `DOMContentLoaded` (or immediately if the DOM is already parsed). If `window.WaveformPlayer` is not present yet, the playlist polls every 100ms for up to 5 seconds. Each element is guarded by `data-waveform-playlist-initialized="true"` so it is never initialised twice, and construction failures are caught and logged via `console.error` rather than thrown.
+Every `[data-waveform-playlist]` element is initialised on `DOMContentLoaded` (or immediately if the DOM is already parsed). If `window.WaveformPlayer` is not present yet, the playlist polls every 100ms for up to 5 seconds. Each element is guarded by `data-waveform-playlist-initialized="true"` so it is never initialised twice, and construction failures are caught and logged via `console.error` rather than thrown. A page with `<html data-waveform-autoinit="false">` is [left alone](/extensions/playlist/api/#opting-out-of-auto-init) (2.1.0+).
 </Aside>
+
+Prefer a tag? [`<waveform-playlist>`](/extensions/playlist/element/) (2.1.0+) takes the same `[data-track]` children, with the options as attributes:
+
+```html
+<waveform-playlist continuous>
+  <div data-track data-url="episode.mp3" data-title="Episode 42"></div>
+</waveform-playlist>
+```
 
 ## The container contract
 

@@ -35,7 +35,7 @@ Calls made before it's built are honoured: `setFilter()` and `setSort()` show in
 | `clearFilters(): void` | Reset every filter. The sort stays. |
 | `setSort(by): void` | Change the order: `'default' \| 'title' \| 'bpm' \| 'key' \| 'duration'` (anything else is `'default'`). |
 | `showMore(): void` | Reveal the next page of rows. |
-| `destroy(): void` | Tear down listeners, observers, timers and the engine. Markup the instance **rendered** is restored to what the container held before (its own classes and the measured `--ws-surface` too); **adopted** server markup is left as it is now — rows may be re-sorted, hidden or marked current — so re-render it before building a new instance over it. |
+| `destroy(opts?): void` | Tear down listeners, observers, timers and the engine. Markup the instance **rendered** is restored to what the container held before (its own classes and the measured `--ws-surface` too); **adopted** server markup is left as it is now — rows may be re-sorted, hidden or marked current — so re-render it before building a new instance over it. `destroy({ restore: true })` (2.1.0+) instead puts adopted markup back **exactly as it arrived**, ready for a new instance — what a framework re-mounting the same markup wants. |
 
 ```js
 list.setFilter({ type: 'Bass', bpmMin: 120, bpmMax: 130 });
@@ -73,6 +73,7 @@ A numeric `play(3)` means the fourth sound as given (the manifest or `sounds` or
 | `WaveformSounds.DEFAULT_OPTIONS` | Every option's default — see [Options](/extensions/sounds/options/#defaults-at-a-glance). |
 | `WaveformSounds.DEFAULT_STRINGS` | The English strings — see [Strings & i18n](/extensions/sounds/strings/). |
 | `WaveformSounds.utils` | The pure data helpers — see [`utils`](#utils). |
+| `WaveformSounds.defineElement(name = 'waveform-sounds')` | Register the [`<waveform-sounds>` element](/extensions/sounds/element/) (2.1.0+) — for a `<script>` page that opted out of auto-init, which has no module import to reach `defineWaveformSoundsElement()`. Returns the constructor; a name already defined is left alone. |
 
 ```js
 document.addEventListener('waveformsounds:ready', () => {
@@ -82,7 +83,7 @@ document.addEventListener('waveformsounds:ready', () => {
 
 ## Events
 
-Every event is a bubbling `CustomEvent` dispatched from the container, so you can listen on the element or on `document`. Each `detail` carries the `instance`.
+Every event is a bubbling, composed `CustomEvent` dispatched from the container, so you can listen on the element or on `document` — from inside a shadow root too (composed since 2.1.0, like the core's). Each `detail` carries the `instance`.
 
 | Event | `detail` | Fires |
 | --- | --- | --- |
@@ -93,7 +94,7 @@ Every event is a bubbling `CustomEvent` dispatched from the container, so you ca
 | `waveformsounds:filter` | `{ visible: number, total: number, filter, sort, instance }` | After every filter, sort or page change, and once when the list is built. `visible` is the number of matching sounds. |
 | `waveformsounds:error` | `{ error, sound?, index?, instance }` | The list failed to build (no `sound`), or a sound failed to load or play. |
 
-`index` is the sound's position in `sounds`. The events are typed on `HTMLElementEventMap`, so `addEventListener('waveformsounds:play', (e) => e.detail.sound.title)` type-checks.
+`index` is the sound's position in `sounds`. The events are typed on `HTMLElementEventMap` — and, since 2.1.0, on `DocumentEventMap` and `WindowEventMap` too — so `addEventListener('waveformsounds:play', (e) => e.detail.sound.title)` type-checks on an element, `document` or `window`.
 
 ```js
 document.addEventListener('waveformsounds:filter', (e) => {
@@ -102,25 +103,37 @@ document.addEventListener('waveformsounds:filter', (e) => {
 });
 ```
 
+### On the instance
+
+*2.1.0+.* The instance is an `EventTarget`, like the core's player: each of those moments is also dispatched on it as a plain `Event` named `ready`, `play`, `pause`, `end`, `filter` or `error`, right after the container's `waveformsounds:*` event (whose `detail` carries the data). The matching `on*` callback still runs. Typed by `WaveformSoundsInstanceEventMap`.
+
+```js
+const list = new WaveformSounds('#pack', { manifest: '/previews/sounds.json' });
+list.addEventListener('play', () => console.log('now playing', list.current?.title));
+```
+
 The engine is a regular player, so its own [`waveformplayer:*` events](/player/events/) fire too — that's what [WaveformTracker](/extensions/tracker/) listens to.
 
 ## Entry points
 
 | Import | What it is |
 | --- | --- |
-| `@arraypress/waveform-sounds` | The runtime. Registers `window.WaveformSounds` and initialises every `[data-waveform-sounds]` element when the DOM is ready. |
-| `@arraypress/waveform-sounds/no-autoinit` | The same exports without the import-time scan. |
+| `@arraypress/waveform-sounds` | The runtime. Registers `window.WaveformSounds` and the [`<waveform-sounds>` element](/extensions/sounds/element/), and initialises every `[data-waveform-sounds]` element when the DOM is ready. |
+| `@arraypress/waveform-sounds/no-autoinit` | The same exports without the import-time side effects: no scan, no element registration. |
 | `@arraypress/waveform-sounds/render` | The DOM-free server renderer. |
 | `@arraypress/waveform-sounds/styles.css` | The stylesheet. |
 
-The main entry's named exports: `WaveformSounds` (also the default), `DEFAULT_OPTIONS`, `DEFAULT_STRINGS`, `encodePeaks`, `decodePeaks`, `normalizeKey`, `normalizeSounds`, `parseManifest`, `facets`, `matches`, `sortSounds`, `formatDuration`, `renderSounds` and `renderSoundsElement`.
+The main entry's named exports: `WaveformSounds` (also the default), `DEFAULT_OPTIONS`, `DEFAULT_STRINGS`, `encodePeaks`, `decodePeaks`, `normalizeKey`, `normalizeSounds`, `parseManifest`, `facets`, `matches`, `sortSounds`, `formatDuration`, `renderSounds`, `renderSoundsElement`, `RENDER_OPTION_KEYS` and `pickRenderOptions` (2.1.0+), and `WaveformSoundsElement` and `defineWaveformSoundsElement` (2.1.0+).
 
 ### `/no-autoinit`
 
-For frameworks and anything else that decides *when* lists are built. Importing it registers `window.WaveformSounds` but scans nothing; construct instances yourself, or call `WaveformSounds.init()` when you're ready. The [framework wrappers](/frameworks/react/#sounds--waveformsounds) import it. (`<html data-waveform-autoinit="false">` does the same for the main entry.)
+For frameworks and anything else that decides *when* lists are built. Importing it registers `window.WaveformSounds` but scans nothing and defines no element; construct instances yourself, call `WaveformSounds.init()` when you're ready, or `defineWaveformSoundsElement()` to register the tag. The [framework wrappers](/frameworks/react/#sounds--waveformsounds) import it. (`<html data-waveform-autoinit="false">` does the same for the main entry.)
 
 ```js
-import WaveformSounds from '@arraypress/waveform-sounds/no-autoinit';
+import WaveformSounds, { defineWaveformSoundsElement } from '@arraypress/waveform-sounds/no-autoinit';
+
+defineWaveformSoundsElement();              // <waveform-sounds>
+defineWaveformSoundsElement('pack-sounds'); // or under your own name
 ```
 
 ### Server rendering: `/render`
@@ -140,11 +153,19 @@ const html = renderSoundsElement(sounds, { player: 'strip' }, 'my-extra-class');
 | Function | Returns |
 | --- | --- |
 | `renderSounds(sounds, options?)` | The component's inner markup: toolbar, rows (with every field written back as `data-*`, so the runtime can rebuild the sounds from them) and footer. `sounds` may be raw or normalised. |
-| `renderSoundsElement(sounds, options?, className?)` | The whole element: `<div class="waveform-sounds waveform-sounds--<player> …" data-waveform-sounds data-player="…">` around `renderSounds()`. |
+| `renderSoundsElement(sounds, options?, className?)` | The whole element: `<div class="waveform-sounds waveform-sounds--<player> …" data-waveform-sounds data-player="…">` around `renderSounds()`. Since 2.1.0 it also writes a `data-*` attribute for every other render option you set (`data-page-size="20"`, `data-filters=""`, `data-strings='…'`), so the runtime adopting it keeps them; with only `player` set (or nothing) the element is unchanged. |
+| `pickRenderOptions(options)` | 2.1.0+. Just the render options that are set (not `null` / `undefined`) — for a wrapper handing its props to `renderSounds`. |
+| `RENDER_OPTION_KEYS` | 2.1.0+. The names of the options that shape the markup (the list below). |
 
-The renderer reads the options that shape the markup: `player`, `search`, `filters`, `sorts`, `showCount`, `menuSearch`, `maxTypeChips`, `loopToggle`, `pageSize`, `columns`, `idPrefix` and `strings`. When the runtime finds that markup in the container it **adopts** it rather than rebuilding — so give the runtime the same options (as `data-*` on the container, or constructor options). See [Server rendering](/extensions/sounds/features/#server-rendering).
+The renderer reads the options that shape the markup — `RENDER_OPTION_KEYS`: `player`, `search`, `filters`, `sorts`, `loopToggle`, `showCount`, `menuSearch`, `pageSize`, `columns`, `maxTypeChips`, `idPrefix`, `loop` (whether the Loop toggle starts pressed) and `strings`. When the runtime finds that markup in the container it **adopts** it rather than rebuilding — so give the runtime the same options (as `data-*` on the container, or constructor options). See [Server rendering](/extensions/sounds/features/#server-rendering).
 
-`/render` also exports `DEFAULT_STRINGS`, `escapeHtml`, `normalizeSounds`, `parseManifest`, `encodePeaks`, `decodePeaks`, `normalizeKey`, `facets` and `formatDuration`.
+```js
+import { renderSounds, pickRenderOptions } from '@arraypress/waveform-sounds/render';
+
+const inner = renderSounds(props.sounds, pickRenderOptions(props));
+```
+
+`/render` also exports `RENDER_OPTION_KEYS`, `pickRenderOptions`, `DEFAULT_STRINGS`, `escapeHtml`, `normalizeSounds`, `parseManifest`, `encodePeaks`, `decodePeaks`, `normalizeKey`, `facets` and `formatDuration`.
 
 ## `utils`
 
@@ -153,7 +174,7 @@ The renderer reads the options that shape the markup: `player`, `search`, `filte
 | Function | Description |
 | --- | --- |
 | `encodePeaks(peaks: number[]): string` | Peaks `0..1` → the 8-bit hex string (two characters per bar). `waveform-gen --manifest` encodes byte-for-byte the same way. |
-| `decodePeaks(value, scale = 1): number[] \| null` | A hex string, an array of `0..1`, or an integer array with its `scale` → peaks `0..1`. `null` for nothing usable. |
+| `decodePeaks(value, scale = 1): number[] \| null` | A hex string, the core's compact [`wp1:` string](/player/waveform-data/#compact-peaks-wp1) (2.1.0+), an array of `0..1`, or an integer array with its `scale` → peaks `0..1`. `null` for nothing usable. |
 | `normalizeKey(key): string` | Any common key spelling → the short form (`"F minor"` → `Fm`, `"C♯"` → `C#`). Unparseable keys come back trimmed, as given. |
 | `normalizeSounds(list, peakScale = 1): Sound[]` | Normalise a list: drop sounds without a `url`, fill in titles and ids, de-duplicate ids. |
 | `parseManifest(manifest): Sound[]` | Read a manifest object (or a bare array), honouring `peakScale`. |
@@ -186,6 +207,7 @@ The package ships TypeScript declarations generated from its source (2.0; 0.x sh
 | `SoundsColumn` | `'type' \| 'bpm' \| 'key' \| 'duration'` |
 | `WaveformSoundsStrings` | Every [string](/extensions/sounds/strings/). |
 | `WaveformSoundsEventMap` | The `waveformsounds:*` events and their `detail`. |
+| `WaveformSoundsInstanceEventMap` | The plain events [on the instance](#on-the-instance): `ready`, `play`, `pause`, `end`, `filter`, `error`. 2.1.0+. |
 
 ## Cleanup
 
@@ -193,6 +215,10 @@ Call `destroy()` when removing a list in a single-page app — it stops the audi
 
 ```js
 list.destroy();
+
+// Re-mounting the same server-rendered markup (a framework island, say):
+list.destroy({ restore: true });
+new WaveformSounds(container);
 ```
 
 ## Related

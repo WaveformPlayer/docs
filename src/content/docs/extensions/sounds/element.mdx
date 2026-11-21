@@ -1,0 +1,139 @@
+---
+title: The <waveform-sounds> element
+description: A light-DOM custom element for the sound list — options as attributes, server-rendered markup adopted.
+sidebar:
+  label: '<waveform-sounds>'
+  order: 1.5
+  badge:
+    text: '2.1'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+2.1.0 adds a custom element, modelled on the core's
+[`<waveform-player>`](/player/element/). It is the same list as
+`<div data-waveform-sounds>`, as a tag:
+
+```html
+<waveform-sounds manifest="/previews/sounds.json" page-size="20"></waveform-sounds>
+```
+
+Load the player and the list as usual ([Install](/extensions/sounds/#install));
+the default entry registers the tag.
+
+## Attributes
+
+Every [`data-*` option](/extensions/sounds/options/) is an attribute, **with or
+without** the `data-` prefix: `manifest`, `player`, `page-size`, `filters`,
+`columns`, `url-state`, `auto-advance`, `strings`, `player-options`, … When both
+forms are present, the plain one wins.
+
+- **Booleans**: a bare attribute means true — `<waveform-sounds auto-advance>`,
+  as `data-auto-advance` is.
+- Values are parsed exactly as `data-*` values are: lists are comma-separated
+  (`filters="type,bpm"`), and `strings` / `player-options` take JSON.
+
+```html
+<waveform-sounds manifest="/previews/sounds.json" player="strip"
+                 filters="type,bpm" columns="bpm,key" url-state></waveform-sounds>
+```
+
+## Light DOM
+
+The element renders into itself — no shadow root — so:
+
+- the [stylesheet](/extensions/sounds/theming/) applies, as to any `[data-waveform-sounds]`
+  (its rules name the tag as well as the class);
+- `waveformsounds:*` [events](/extensions/sounds/api/#events) bubble from the tag,
+  so one listener on `document` hears it like any other list.
+
+The stylesheet makes the element a block. An empty element that isn't defined
+yet (its manifest still to load) holds `--ws-element-height` if you set one
+(default `0`), so the page doesn't shift as it fills in.
+
+## Adopting server-rendered markup
+
+Put [`renderSounds()`](/extensions/sounds/api/#server-rendering-render) output
+inside the tag and the element **adopts** it, as `[data-waveform-sounds]` does:
+the list is there, readable and crawlable, before any script runs, and the
+runtime wires it up instead of rebuilding it.
+
+```js
+import { renderSounds } from '@arraypress/waveform-sounds/render';
+
+const html = `<waveform-sounds page-size="20">${renderSounds(sounds, { pageSize: 20 })}</waveform-sounds>`;
+```
+
+The runtime reads its options from the element's attributes, not from the
+markup — give the tag the same options you gave the renderer (see
+[Server rendering](/extensions/sounds/features/#server-rendering)).
+
+When the element is removed, the list is destroyed with
+[`destroy({ restore: true })`](/extensions/sounds/api/#public-methods): adopted
+markup is put back **exactly as the server sent it**, so the same markup can be
+mounted again. Do the same when you tear down a list built in script over
+server markup that a framework will re-mount:
+
+```js
+list.destroy({ restore: true }); // adopted markup back as it arrived
+```
+
+## When it's built, and rebuilt
+
+- **Built on connect**, adopting any server markup inside it, or fetching its
+  `manifest`.
+- **Changing an option attribute** (either form) rebuilds the list once per
+  microtask, from the sounds it already holds — or fetches afresh when
+  `manifest` changed.
+- **Removing** the element destroys its list. **Moving** it within the DOM
+  (removed and re-added in the same task) does not, and playback carries on.
+
+## Scripting it
+
+```js
+const el = document.querySelector('waveform-sounds');
+
+el.sounds;                         // the WaveformSounds instance (null while disconnected)
+await el.sounds?.ready;
+el.sounds?.setFilter({ type: 'Bass' });
+el.setAttribute('page-size', '50'); // rebuilt with the new page size
+```
+
+A rebuild makes a new instance, so read `el.sounds` when you need it rather than
+keeping a reference.
+
+## Registration
+
+The default entry — `import '@arraypress/waveform-sounds'` or the CDN script —
+registers `<waveform-sounds>` before it scans the page, unless the page sets
+[`<html data-waveform-autoinit="false">`](/player/data-attributes/#initialising-only-what-you-control).
+That opt-out switches both off.
+
+The [`/no-autoinit`](/extensions/sounds/api/#no-autoinit) entry registers
+nothing. Call `defineWaveformSoundsElement()` yourself — optionally with another
+tag name:
+
+```js
+import { defineWaveformSoundsElement } from '@arraypress/waveform-sounds/no-autoinit';
+
+defineWaveformSoundsElement();              // <waveform-sounds>
+defineWaveformSoundsElement('pack-sounds'); // or your own name
+```
+
+A `<script>` page that opted out uses the same function from the global,
+`WaveformSounds.defineElement()`:
+
+```html
+<html data-waveform-autoinit="false">
+  …
+  <script>WaveformSounds.defineElement();</script>
+```
+
+Either returns the registered constructor (or `undefined` outside a browser), and
+a name that is already defined is left alone. The class is exported too, as
+`WaveformSoundsElement`.
+
+<Aside type="tip" title="TypeScript">
+The element is typed on `HTMLElementTagNameMap`, so
+`document.querySelector('waveform-sounds')` returns a `WaveformSoundsElement`.
+</Aside>

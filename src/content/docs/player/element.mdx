@@ -70,6 +70,22 @@ el.setAttribute('src', '/audio/next.mp3'); // loads the next track
 The default bundle — the script tag or `import '@arraypress/waveform-player'` —
 registers `<waveform-player>` before it scans the page, unless the page sets
 [`data-waveform-autoinit="false"`](/player/data-attributes/#initialising-only-what-you-control).
+That opt-out switches the registration off too: on such a page the tag stays an
+unknown element until you register it.
+
+A `<script>` page that opted out has no module import to reach
+`defineWaveformPlayerElement()`, so 2.1.0 adds it to the global as
+`WaveformPlayer.defineElement()`:
+
+```html
+<html data-waveform-autoinit="false">
+  …
+  <script src="https://unpkg.com/@arraypress/waveform-player@latest/dist/waveform-player.min.js"></script>
+  <script>
+    WaveformPlayer.defineElement();                  // <waveform-player>
+    // WaveformPlayer.defineElement('my-audio-player'); // or your own name
+  </script>
+```
 
 The [`/no-autoinit`](/getting-started/installation/#entry-points) entry point
 registers nothing. Call `defineWaveformPlayerElement()` yourself — optionally

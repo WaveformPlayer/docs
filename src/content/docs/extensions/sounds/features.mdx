@@ -69,8 +69,10 @@ A pack can have 300 previews, so nothing in the list is per-sound heavy:
 
 | Key | Where | Does |
 | --- | --- | --- |
+| Tab | Into the list | The list is **one Tab stop** (2.1.0+; a roving `tabindex`, set at runtime — the markup is unchanged): Tab lands on the focused row's play button (else the first row's), then that row's download link and — on the current sound — its seek slider, then leaves the list. Move between rows with ↑ / ↓. |
 | ↑ / ↓ | A row | Move to the previous / next row; **while a sound plays, play that row too** (the sample-browser audition — turn it off with `arrowAudition: false`). ↑ on the first row goes back to the search box. |
 | Home / End | A row | First / last visible row (auditioning the same way). |
+| Home / End | The current row's seek slider | Seek to the start / end (2.1.0+). |
 | ← / → | The playing row | Seek back / forward 10% (stopping just short of the end, so a held → can't end the sound). |
 | Space / Enter | A row | Play / pause it. |
 | `/` | Anywhere in the list, outside a text field | Focus the search box. |
@@ -80,7 +82,7 @@ A pack can have 300 previews, so nothing in the list is per-sound heavy:
 
 Keys with Alt, Ctrl or Cmd held pass through. After a mouse or touch play, focus moves (quietly, with no scroll jump and no focus ring) to that row's play button, so the arrow keys drive the list instead of scrolling the page.
 
-Each row is a list item with a play button (`aria-pressed`, labelled `Play <title>` / `Pause <title>`); the waveform is a `role="slider"` (0–100, focusable on the current row only); the download link is labelled `Download <title>`; and a polite live region announces `Playing <title>`. Every one of those words is a [string](/extensions/sounds/strings/) you can translate.
+Each row is a list item with a play button (`aria-pressed`, labelled `Play <title>` / `Pause <title>`); the waveform is a `role="slider"` (0–100, focusable on the current row only, and read out as a time — "0:12 of 0:30", string `seekValue` — 2.1.0+); the download link is labelled `Download <title>`; and a polite live region announces `Playing <title>` (and `Could not play <title>` when a sound fails, 2.1.0+). Every one of those words is a [string](/extensions/sounds/strings/) you can translate.
 
 ## Filters in the address
 
@@ -158,8 +160,10 @@ const html = `<div data-waveform-sounds class="waveform-sounds waveform-sounds--
 
 `renderSoundsElement(sounds, options, className)` writes that wrapper too. Two things to keep in step:
 
-- **The runtime reads its options from the element, not from the markup.** Pass the same options to the renderer and to the runtime — as `data-*` attributes on the container (`renderSoundsElement` writes `data-player` only) or as constructor options. A `pageSize` the runtime doesn't know about, say, re-pages the rows to the default 50.
+- **The runtime reads its options from the element, not from the markup.** Pass the same options to the renderer and to the runtime — as `data-*` attributes on the container or as constructor options. A `pageSize` the runtime doesn't know about, say, re-pages the rows to the default 50. `renderSoundsElement` takes care of it: since 2.1.0 it writes a `data-*` attribute for every render option you set (`data-page-size="20"`, `data-filters=""`, `data-strings='…'`), so the runtime adopting it keeps them. With only `player` set (or nothing), the element is as before. (2.0 wrote `data-player` only.) A wrapper handing its props to the renderer can pick the markup-shaping ones with [`pickRenderOptions()`](/extensions/sounds/api/#server-rendering-render).
 - **`idPrefix`.** The dropdowns' element ids default to the container's `id`, else a hash of the sounds — the same on the server and in the browser. Two lists of the *same* sounds on one page need an `id` or `idPrefix` each.
+
+Or let the [`<waveform-sounds>` element](/extensions/sounds/element/) adopt it: put the `renderSounds()` output inside the tag.
 
 The framework wrappers — [Astro](/frameworks/astro/#the-sound-list), [React](/frameworks/react/#sounds--waveformsounds), [Svelte](/frameworks/svelte/#sounds--waveformsounds), [Vue](/frameworks/vue/#sounds--waveformsounds) — do all of this for you whenever you give them `sounds`.
 

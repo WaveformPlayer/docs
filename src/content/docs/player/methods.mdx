@@ -35,7 +35,7 @@ Creates and mounts a player.
 
 **Returns** the `WaveformPlayer` instance, which is an `EventTarget` (2.0): `player.addEventListener('play', …)` works and is typed — see [Events](/player/events/#listening-on-the-instance-20). **Throws** `Error('[WaveformPlayer] Container element not found')` if the container cannot be resolved.
 
-Configuration is merged in precedence order **defaults &lt; `data-*` attributes &lt; constructor options**, then the resolved colour preset and per-style bar sizing (`STYLE_DEFAULTS`) are applied. Aliases are normalized (`style` → `waveformStyle`, `src` → `url`; the canonical key wins). The instance is registered in [`WaveformPlayer.instances`](#waveformplayerinstances), the DOM and audio are initialized, and `waveformplayer:ready` fires roughly 100 ms later.
+Configuration is merged in precedence order **defaults &lt; `data-*` attributes &lt; constructor options**, then the resolved colour preset and per-style bar sizing (`STYLE_DEFAULTS`) are applied. Aliases are normalized (`style` → `waveformStyle`, `src` → `url`; the canonical key wins). The instance is registered in [`WaveformPlayer.instances`](#static-properties), the DOM and audio are initialized, and `waveformplayer:ready` fires roughly 100 ms later.
 
 ```js
 // Selector
@@ -405,6 +405,16 @@ Scanning this way keeps the idempotency flagging and per-element error isolation
 The `root` parameter. Calling `init()` with no argument scans the whole document exactly as before.
 </Aside>
 
+### `WaveformPlayer.defineElement(name?)`
+
+*2.1.0+.* Registers the [`<waveform-player>` element](/player/element/) — optionally under another tag name — from the global. It is `defineWaveformPlayerElement()` as a static, for a `<script>` page that [opted out of auto-init](/player/data-attributes/#initialising-only-what-you-control) and so has no module import to reach the named export. **Returns** the registered constructor (`undefined` outside a browser); a name that is already defined is left alone.
+
+```html
+<html data-waveform-autoinit="false">
+<script src="https://unpkg.com/@arraypress/waveform-player@latest/dist/waveform-player.min.js"></script>
+<script>WaveformPlayer.defineElement();</script>
+```
+
 ### `WaveformPlayer.getPeaksUrl(audioUrl)`
 
 Derives the sibling peaks URL for an audio file by swapping its extension to `.json` — the build-time counterpart to decoding audio in the browser.
@@ -506,6 +516,7 @@ const label = WaveformPlayer.utils.formatTime(95); // '1:35'
 | `WaveformPlayer.getAllInstances()` | static | `WaveformPlayer[]` |
 | `WaveformPlayer.destroyAll()` | static | `void` |
 | `WaveformPlayer.init(root?)` | static | `void` |
+| `WaveformPlayer.defineElement(name?)` | static | `CustomElementConstructor \| undefined` |
 | `WaveformPlayer.getPeaksUrl(audioUrl)` | static | `string \| undefined` |
 | `WaveformPlayer.generateWaveformData(url, samples?)` | static | `Promise<number[]>` |
 

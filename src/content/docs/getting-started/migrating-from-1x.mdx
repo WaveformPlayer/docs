@@ -227,7 +227,8 @@ every wrapper's typing fallbacks for 1.x cores.
 | Looping | `loop`, `showLoop`, `loopLabel`; `setLoop()`, `clearLoop()`, `loopMarker()`, `toggleLoop()` | [Looping](/player/looping/) |
 | Volume controls | `showVolume`, `volume`, `volumeLabel`, `muteLabel`; `getVolume()`, `setMuted()` | [Options](/player/options/#visibility--behaviour) |
 | Download link | `showDownload`, `downloadUrl`, `downloadName`, `downloadLabel` | [Options](/player/options/#visibility--behaviour) |
-| Custom element | `<waveform-player>`; `defineWaveformPlayerElement()` in `/no-autoinit` | [The `<waveform-player>` element](/player/element/) |
+| Custom element | `<waveform-player>`; `defineWaveformPlayerElement()` in `/no-autoinit`; `WaveformPlayer.defineElement()` (2.1) | [The `<waveform-player>` element](/player/element/) |
+| Playlist and sound-list elements (2.1) | `<waveform-playlist>`, `<waveform-sounds>`; `WaveformPlaylist.defineElement()` / `WaveformSounds.defineElement()` | [`<waveform-playlist>`](/extensions/playlist/element/), [`<waveform-sounds>`](/extensions/sounds/element/) |
 
 The framework components expose the 13 new options as props and the new
 events as `onSeek` / `@seek` / `onseek` (and friends): see

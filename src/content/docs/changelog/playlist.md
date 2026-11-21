@@ -13,6 +13,57 @@ Generated from [`@arraypress/waveform-playlist`'s CHANGELOG](https://github.com/
 
 ## [Unreleased]
 
+## [2.1.0] — 2026-11-21
+
+### Added
+
+- **`WaveformPlaylist.defineElement(name?)`** registers `<waveform-playlist>`
+  from the global, for a `<script>` page that opted out of auto-init.
+
+- **`<waveform-playlist>` custom element.** Light DOM: the element is the
+  playlist's container, so its `[data-track]` / `[data-chapter]` children are
+  written exactly as inside `data-waveform-playlist`, the stylesheet applies
+  as is, and `waveformplayer:*` events bubble from the tag.
+  - Attributes: every `data-*` option the playlist reads — its own (`layout`,
+    `continuous`, `cover-size`, …) and the player options it forwards
+    (`height`, `show-volume`, `waveform-style`, …) — with or without the
+    `data-` prefix, the unprefixed form winning; a bare boolean attribute is
+    true. `style` is CSS, so its alias is `data-style` only. `audio-mode`,
+    `loop`, `show-loop`, `lazy` and the per-track keys are not attributes
+    (the playlist never forwards them).
+  - Built on connect (after `DOMContentLoaded` while the page is still
+    parsing); destroyed on removal, unless the element is re-added in the
+    same task, so moving it keeps the playlist and its playback.
+  - Changing an option attribute, or adding, removing or editing a
+    `[data-track]` / `[data-chapter]` child, rebuilds the playlist (once per
+    microtask). The rebuild carries on with the current track — same
+    position, playing if it was — when that track (same element and url, else
+    same url) is still there; otherwise it starts on the first track, paused.
+  - `.playlist` is the instance (a new one after a rebuild); `play()`,
+    `pause()`, `next()` and `previous()` forward to it.
+  - The default entry (npm root and the CDN build) registers it;
+    `defineWaveformPlaylistElement(name = 'waveform-playlist')` registers it
+    under any name. Typed in `HTMLElementTagNameMap`.
+  - CSS: `display: block`; before upgrade it reserves
+    `--wp-element-height` (default `90px`), and its raw tracks stay hidden
+    until the playlist is built.
+- **`@arraypress/waveform-playlist/no-autoinit`** — the same exports without
+  the import-time side effects: it neither scans for `[data-waveform-playlist]`
+  nor registers `<waveform-playlist>`. Both ES entries share one chunk, so an
+  app importing both gets one class.
+
+### Fixed
+
+- **Pages that opted out of auto-init still had playlists built.** The
+  family's switch, `<html data-waveform-autoinit="false">`, is now honoured
+  as the core honours it: on such a page importing the package (or loading
+  the CDN script) neither scans for `[data-waveform-playlist]` nor registers
+  `<waveform-playlist>`. `WaveformPlaylist.init()` and
+  `defineWaveformPlaylistElement()` still do, when the page calls them.
+- The `[data-waveform-playlist]` scan (`WaveformPlaylist.init()`) skips a
+  container that already has a playlist built in script, instead of building
+  a second one over it.
+
 ## [2.0.0] — 2026-11-21
 
 Requires `@arraypress/waveform-player` 2.0.

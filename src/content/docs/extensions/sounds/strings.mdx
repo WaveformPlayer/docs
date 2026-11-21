@@ -27,7 +27,7 @@ As markup, `data-strings` takes the same object as JSON:
      data-strings='{"count":"{count} geluiden","countOne":"1 geluid"}'></div>
 ```
 
-Placeholders in braces are filled in: `{title}` (the sound's title), `{count}` and `{total}`. An unknown placeholder is left as written. The server renderer takes the same `strings` option, so server-rendered markup is translated too — pass the same object to the runtime.
+Placeholders in braces are filled in: `{title}` (the sound's title), `{count}` and `{total}` (and, in `seekValue`, `{time}` and `{duration}`). An unknown placeholder is left as written. The server renderer takes the same `strings` option, so server-rendered markup is translated too — pass the same object to the runtime.
 
 ## Every string
 
@@ -65,6 +65,7 @@ The defaults are `WaveformSounds.DEFAULT_STRINGS` (also a named export of the ma
 | `play` | `Play {title}` | A row's play button label. |
 | `pause` | `Pause {title}` | A playing row's button label. |
 | `seek` | `Seek {title}` | A row waveform's label. |
+| `seekValue` | `{time} of {duration}` | The seek slider's spoken value (`aria-valuetext`, "0:12 of 0:30"). 2.1.0+. |
 | `download` | `Download {title}` | A row's download link label. |
 | `count` | `{count} sounds` | The count. |
 | `countOne` | `1 sound` | The count, for a single sound. |
@@ -73,6 +74,9 @@ The defaults are `WaveformSounds.DEFAULT_STRINGS` (also a named export of the ma
 | `empty` | `No sounds match.` | Nothing passes the filter. |
 | `clear` | `Clear filters` | The button beside it. |
 | `nowPlaying` | `Playing {title}` | Announced (in a polite live region) when a sound starts. |
+| `playError` | `Could not play {title}` | Announced when a sound fails to load or play (a 404, an undecodable file, a dropped connection). 2.1.0+. |
+| `loadError` | `Could not load the sounds.` | Shown (`role="alert"`) where the list would be when it can't be built — the manifest 404s or isn't a manifest. Fallback content you put in the container stays instead. 2.1.0+. |
+| `noSounds` | `No sounds.` | An empty pack (nothing to filter, so no Clear button). 2.1.0+. |
 
 <Aside type="note" title="Plurals">
 The count has exactly three forms — `countOne` when the list holds one sound, `count` for any other total, and `countFiltered` whenever a filter hides some (`1 of 300 sounds` included). Languages with more plural forms than that can't be expressed fully; pick the wording that reads best for the common case.

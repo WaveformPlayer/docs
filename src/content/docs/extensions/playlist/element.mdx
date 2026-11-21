@@ -1,0 +1,140 @@
+---
+title: The <waveform-playlist> element
+description: A light-DOM custom element for playlists — the same [data-track] markup, options as attributes.
+sidebar:
+  label: '<waveform-playlist>'
+  order: 1.5
+  badge:
+    text: '2.1'
+    variant: tip
+---
+import { Aside } from '@astrojs/starlight/components';
+
+2.1.0 adds a custom element. It is the same playlist as
+`<div data-waveform-playlist>`, as a tag — the `[data-track]` and
+`[data-chapter]` children are written exactly as they are inside the
+[container](/extensions/playlist/#the-container-contract):
+
+```html
+<waveform-playlist layout="hero" show-volume continuous>
+  <div data-track data-url="intro.mp3" data-title="Intro" data-duration="187"></div>
+  <div data-track data-url="episode.mp3" data-title="Episode 42">
+    <div data-chapter data-time="0:00">Introduction</div>
+    <div data-chapter data-time="5:30">Main Topic</div>
+  </div>
+</waveform-playlist>
+```
+
+Load the player and the playlist as usual ([Install](/extensions/playlist/#install));
+the default entry registers the tag.
+
+## Attributes
+
+Every `data-*` option the playlist reads is an attribute, **with or without**
+the `data-` prefix — its own ([`layout`, `continuous`, `cover-size`, …](/extensions/playlist/options/))
+and the player options it forwards (`height`, `show-volume`, `waveform-style`, …).
+When both forms are present, the plain one wins.
+
+- **Booleans**: a bare attribute means true, as HTML boolean attributes do —
+  `<waveform-playlist continuous show-volume>`. (The `data-` form is read
+  exactly as on a `[data-waveform-playlist]` container.)
+- **`style`**: plain `style` is the element's CSS, so the waveform-style alias
+  only works as `data-style`. Use `waveform-style`.
+- **Not attributes**: `audio-mode`, `loop`, `show-loop` and `lazy` (the playlist
+  never forwards them to its player), and the per-track keys — `url`, `title`,
+  `artist`, `artwork`, `duration`, `waveform`, `markers`, … — which belong on each
+  `[data-track]`.
+
+## Light DOM
+
+The element renders into itself — no shadow root — so:
+
+- the [playlist stylesheet](/extensions/playlist/api/#css-classes) applies as it does to a
+  `[data-waveform-playlist]` container;
+- `waveformplayer:*` [events](/extensions/playlist/api/#events) bubble from the tag,
+  so one listener on `document` hears it like any other player.
+
+The stylesheet makes the element a block. Until the script defines it, it
+reserves `--wp-element-height` (default `90px`) and keeps its raw tracks hidden,
+so chapter labels never flash in and out. Set the property to your playlist's
+height to avoid any shift as it upgrades:
+
+```css
+waveform-playlist { --wp-element-height: 320px; }
+```
+
+## When it's built, and rebuilt
+
+- **Built on connect.** While the page is still parsing, it waits for
+  `DOMContentLoaded`, so it reads all its tracks at once rather than building as
+  they arrive.
+- **Changing an option attribute** (either form), or **adding, removing or
+  editing** a `[data-track]` / `[data-chapter]` child, rebuilds the playlist —
+  once per microtask, however many changes you make.
+- **A rebuild carries on with the current track** — same position, playing if it
+  was — when that track is still in the list (the same element and URL, else the
+  same URL). Otherwise it starts on the first track, paused.
+- **Removing** the element destroys its playlist. **Moving** it within the DOM
+  (removed and re-added in the same task) does not, and playback carries on.
+
+```js
+const el = document.querySelector('waveform-playlist');
+
+// Append a track: the playlist rebuilds, and the playing track keeps playing.
+el.insertAdjacentHTML('beforeend',
+  '<div data-track data-url="/audio/bonus.mp3" data-title="Bonus"></div>');
+
+el.setAttribute('layout', 'list'); // rebuilt in the new layout, same track
+```
+
+## Scripting it
+
+```js
+const el = document.querySelector('waveform-playlist');
+
+el.playlist;   // the WaveformPlaylist instance (a new one after each rebuild)
+el.play();     // play(), pause(), next() and previous() forward to it
+el.next();
+el.playlist?.seekToChapter(0, 330);
+```
+
+`el.playlist` is `null` before it's built and after removal. Because a rebuild
+replaces the instance, read `el.playlist` when you need it rather than keeping a
+reference.
+
+## Registration
+
+The default entry — `import '@arraypress/waveform-playlist'` or the CDN script —
+registers `<waveform-playlist>` (and scans for `[data-waveform-playlist]`),
+unless the page sets
+[`<html data-waveform-autoinit="false">`](/player/data-attributes/#initialising-only-what-you-control).
+That opt-out switches both off.
+
+The [`/no-autoinit`](/extensions/playlist/api/#entry-points) entry registers
+nothing. Call `defineWaveformPlaylistElement()` yourself — optionally with
+another tag name:
+
+```js
+import { defineWaveformPlaylistElement } from '@arraypress/waveform-playlist/no-autoinit';
+
+defineWaveformPlaylistElement();               // <waveform-playlist>
+defineWaveformPlaylistElement('my-playlist');  // or your own name
+```
+
+A `<script>` page that opted out uses the same function from the global,
+`WaveformPlaylist.defineElement()`:
+
+```html
+<html data-waveform-autoinit="false">
+  …
+  <script>WaveformPlaylist.defineElement();</script>
+```
+
+Either returns the registered constructor (or `undefined` outside a browser), and
+a name that is already defined is left alone. The class is exported too, as
+`WaveformPlaylistElement`.
+
+<Aside type="tip" title="TypeScript">
+The element is typed on `HTMLElementTagNameMap`, so
+`document.querySelector('waveform-playlist')` returns a `WaveformPlaylistElement`.
+</Aside>
