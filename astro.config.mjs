@@ -36,6 +36,8 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'WaveformPlayer',
+			logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo-dark.svg' },
+			favicon: '/favicon.svg',
 			description:
 				'Documentation for the @arraypress waveform family — a small, zero-dependency set of vanilla-JS audio components: a canvas waveform player, a persistent bottom bar, playlists, a searchable sound list, listen analytics, and build-time peak tooling.',
 			social: [

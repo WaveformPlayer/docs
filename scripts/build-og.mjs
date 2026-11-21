@@ -43,15 +43,10 @@ function dotGrid() {
 	return d;
 }
 
+// The WaveformPlayer mark (github.com/WaveformPlayer/assets, logo/mark.svg), 38 tall in the lockup slot.
+const MARK_PATH = 'M32 222.3a25.8 25.8 0 0 1 51.6 0v67.3a25.8 25.8 0 0 1 -51.6 0zM131.1 153a25.8 25.8 0 0 1 51.6 0v206.1a25.8 25.8 0 0 1 -51.6 0zM230.2 83.6a25.8 25.8 0 0 1 51.6 0v344.9a25.8 25.8 0 0 1 -51.6 0zM329.3 172.8a25.8 25.8 0 0 1 51.6 0v166.5a25.8 25.8 0 0 1 -51.6 0zM428.4 232.2a25.8 25.8 0 0 1 51.6 0v47.5a25.8 25.8 0 0 1 -51.6 0z';
 function mark() {
-	const bars = [
-		{ x: 0, h: 18 },
-		{ x: 13, h: 30 },
-		{ x: 26, h: 38 },
-		{ x: 39, h: 26 },
-		{ x: 52, h: 14 },
-	];
-	return bars.map((b) => `<rect x="${b.x}" y="${19 - b.h / 2}" width="6" height="${b.h}" rx="3" fill="${FG}"/>`).join('');
+	return `<g transform="translate(-3.067 -5.535) scale(0.09584)" fill="${FG}"><path d="${MARK_PATH}"/></g>`;
 }
 
 function wrap(text, maxChars, maxLines = 2) {
@@ -81,7 +76,7 @@ function cardSvg({ badge, title, subtitle }) {
   <rect x="40" y="40" width="${W - 80}" height="${H - 80}" rx="28" fill="${CARD}" fill-opacity="0.6" stroke="${BORDER}" stroke-width="1"/>
   <g transform="translate(104, 82)">
     <g>${mark()}</g>
-    <text x="80" y="27" font-family="${SANS}" font-size="26" font-weight="600" fill="${DIM}" letter-spacing="-0.5">WaveformPlayer</text>
+    <text x="65" y="27" font-family="${SANS}" font-size="26" font-weight="600" fill="${DIM}" letter-spacing="-0.5">WaveformPlayer</text>
   </g>
   <g transform="translate(104, 232)">
     <rect x="0" y="0" width="${badgeW}" height="46" rx="23" fill="${BADGE_BG}" stroke="${BORDER}" stroke-width="1"/>
