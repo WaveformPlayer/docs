@@ -46,8 +46,9 @@ Unknown entries in `filters`, `sorts` and `columns` are dropped, `menuSearch` / 
 | `menuSearch` | `data-menu-search` | `number` | `8` | A dropdown (type / key / sort) gets a search field when it has **more** than this many options. |
 | `maxTypeChips` | `data-max-type-chips` | `number` | `10` | Up to this many types show as chips; more become a **Type** menu. |
 | `loopToggle` | `data-loop-toggle` | `boolean` | `true` | Show the Loop toggle. When any sound is marked `loop: true`, it repeats only loops. |
-| `pageSize` | `data-page-size` | `number` | `50` | Rows shown before **Show more**. `0` shows all. |
+| `pageSize` | `data-page-size` | `number` | `50` | Rows shown before **Show more**. `0` shows all — rendered 50 at a time as the list scrolls (2.2.0+). |
 | `columns` | `data-columns` | `('type' \| 'bpm' \| 'key' \| 'duration')[]` | `['type', 'bpm', 'key', 'duration']` | The columns after the title, in this order. `[]` = title only. |
+| `mergeEnharmonicKeys` | `data-merge-enharmonic-keys` | `boolean` | `true` | Enharmonic keys are one key: A#m and Bbm (C# and Db, …) are one key-menu entry, a filter on either finds both, and the search and `?key=` take either spelling. The entry shows the spelling the pack uses most; a tie goes to the conventional key signature (Db, Eb, F#, Ab, Bb, B major; C#m, Ebm, F#m, G#m, Bbm minor). Rows show their key as written. `false` keeps every spelling apart. A render option. 2.2.0+. See [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys). |
 | `idPrefix` | `data-id-prefix` | `string` | the container's `id`, else a hash of the sounds | Prefix for the dropdowns' element ids. Two lists of the **same** sounds on one page each need one (or an `id`). The framework wrappers always pass a unique one. |
 | `urlState` | `data-url-state` | `boolean \| string` | `false` | Keep the filters and sort in the address. `true` uses `q`, `type`, `key`, `bpm`, `loop`, `sort`; a string prefixes them (`'pack'` → `pack-q`, …). See [Filters in the address](/extensions/sounds/features/#filters-in-the-address). |
 
@@ -151,6 +152,7 @@ Each callback fires alongside the matching bubbling [`waveformsounds:*` event](/
   pageSize: 50,
   columns: ['type', 'bpm', 'key', 'duration'],
   maxTypeChips: 10,
+  mergeEnharmonicKeys: true,
   sounds: null,
   manifest: null,
   waveformStyle: 'mirror',
@@ -158,7 +160,7 @@ Each callback fires alongside the matching bubbling [`waveformsounds:*` event](/
   progressColor: null,
   barWidth: 2,
   barGap: 1,
-  loop: false,
+  loop: null,
   autoAdvance: false,
   arrowAudition: true,
   idPrefix: null,

@@ -8,7 +8,7 @@ import { Tabs, TabItem, Aside, Card, CardGrid, Steps } from '@astrojs/starlight/
 
 ## Library API
 
-The package's one entry (`@arraypress/waveform-gen`, ESM) exports `generatePeaks` and `roundPeaks`, plus — since 2.1.0 — the [sounds-manifest](#sounds-manifests) functions: `buildManifest`, `manifestEntry`, `isLoopPath` (2.2.0+), `createManifest`, `parseFilename`, `encodePeaks`, `resamplePeaks`, `fileUrl`, `naturalCompare`, `commonRoot`, `relativeTo`, and the constants `MANIFEST_VERSION` (`1`) and `DEFAULT_MANIFEST_BARS` (`64`). Since 3.0.0 it also exports `encodeCompactPeaks`, `decodeCompactPeaks` and `COMPACT_PEAKS_PREFIX` (`'wp1:'`), and ships TypeScript declarations generated from its source (`GeneratePeaksOptions`, `PeaksResult` and the manifest types). On Node 22.12+ `require()` loads it too.
+The package's one entry (`@arraypress/waveform-gen`, ESM) exports `generatePeaks` and `roundPeaks`, plus — since 2.1.0 — the [sounds-manifest](#sounds-manifests) functions: `buildManifest`, `manifestEntry`, `isLoopPath` (2.2.0+), `createManifest`, `parseFilename`, `encodePeaks`, `resamplePeaks`, `fileUrl`, `naturalCompare`, `commonRoot`, `relativeTo`, and the constants `MANIFEST_VERSION` (`1`) and `DEFAULT_MANIFEST_BARS` (`128` since 3.1.0; `64` before). Since 3.0.0 it also exports `encodeCompactPeaks`, `decodeCompactPeaks` and `COMPACT_PEAKS_PREFIX` (`'wp1:'`), and ships TypeScript declarations generated from its source (`GeneratePeaksOptions`, `PeaksResult` and the manifest types). On Node 22.12+ `require()` loads it too.
 
 ```javascript
 import { generatePeaks } from '@arraypress/waveform-gen';
@@ -82,7 +82,7 @@ Decodes each file and returns a [WaveformSounds manifest](/extensions/gen/manife
 |--------|---------|-------------|
 | `root` | the deepest folder containing every file | The folder URLs and types are relative to. |
 | `baseUrl` | `'/'` | The public URL of `root`. |
-| `bars` | `64` | Bars per sound in the hex `peaks`. |
+| `bars` | `128` | Bars per sound in the hex `peaks` (3.1.0+; `64` before — pass `bars: 64` for exactly the 3.0.0 output). |
 | `type` | the file's folder name | One type for every sound. |
 | `detectBPM` | `false` | Detect a tempo for files whose name carries none. |
 | `samples` | `1800` | Resolution decoded at before downsampling to `bars`. |

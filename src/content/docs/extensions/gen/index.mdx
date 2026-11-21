@@ -147,7 +147,7 @@ WaveformGen does not expand globs itself — `./audio/*.mp3` is expanded by your
 | `--root <dir>` | _deepest folder containing every input_ | path | Manifest and `--html`: the folder URLs and types are relative to. |
 | `--base-url <url>` | `/` | string | Manifest and `--html`: the public URL of `--root`. |
 | `--type <name>` | _the file's folder_ | string | Manifest only: one type for every sound. |
-| `--manifest-bars <n>` | `64` | integer | Manifest only: bars per sound. |
+| `--manifest-bars <n>` | `128` | integer | Manifest only: bars per sound. `128` since 3.1.0; `64` for a smaller manifest (what 3.0.0 wrote). |
 | `--waveform-base-url <url>` | _`--base-url`_ | string | Manifest only: the public URL of `--output`, for each sound's `waveform` link. |
 | `--help`, `-h` | — | flag | Print help and `exit(0)`. Also shown when run with zero arguments. |
 | `--` | — | — | End of flags: every later argument is an input path. |

@@ -29,7 +29,7 @@ npx @arraypress/waveform-gen ./public/previews/ --recursive \
 | `--root <dir>` | the deepest folder containing every input | The folder URLs and types are relative to. A directory argument counts as itself, a file argument (e.g. one a shell glob expanded) as its folder. A file outside `--root` fails with `… is outside the manifest root …`. |
 | `--base-url <url>` | `/` | The public URL `--root` is served at. A path (`/previews/`) or an origin (`https://cdn.example.com/packs`); a trailing `/` is added if missing. |
 | `--type <name>` | the file's folder name | One type for every sound. By default a file's type is the name of the folder it's in — and files directly in `--root` get none. |
-| `--manifest-bars <n>` | `64` | Bars per sound in `peaks`. An integer of 1 or more, or the run exits `1`. |
+| `--manifest-bars <n>` | `128` | Bars per sound in `peaks`. An integer of 1 or more, or the run exits `1`. `128` since 3.1.0 (64 before) — sharp on desktop-width rows; `--manifest-bars 64` for a smaller manifest, exactly what 3.0.0 wrote. |
 | `--waveform-base-url <url>` | `--base-url` | The public URL of `--output`. With `--output`, each sound links its full per-file JSON as `waveform` (used by the `strip` layout's docked player). |
 
 They combine with the usual flags: `--recursive` to walk sub-folders (which is what gives sounds their types), `--bpm` to detect a tempo for files whose name carries none, `--samples` for the resolution decoded at before downsampling to `--manifest-bars`, `--quiet`, and `--output` / `--precision` for the per-file JSON. Value flags take `--flag value` or `--flag=value`. `--manifest` with `--format inline` is a usage error (exit `2`).
@@ -86,7 +86,9 @@ Pretty-printed (2-space indent) with a trailing newline. Each sound has, in this
 | `peaks` | Yes | An 8-bit hex string, two lowercase characters per bar (`00`–`ff`). WaveformSounds 2.1.0+ also reads the core's [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) here, but the generator writes hex. |
 | `waveform` | With `--output` | The URL of the sound's full per-file JSON. |
 
-**Peaks.** 64 bars by default (`--manifest-bars`), downsampled from the same normalised peaks the per-file JSON holds by keeping the loudest value in each bucket — so a short transient (a kick, a snare hit) still shows, and the loudest bar is `ff`. The encoding is byte-for-byte WaveformSounds' own [`encodePeaks`](/extensions/sounds/api/#utils): each value clamped to `0..1`, scaled by 255 and rounded. At 64 bars that's 128 characters a sound. There is no `peakScale` in the output — it only applies to integer arrays, and hex needs none.
+**Peaks.** 128 bars by default (`--manifest-bars`; 3.1.0+, 64 before), downsampled from the same normalised peaks the per-file JSON holds by keeping the loudest value in each bucket — so a short transient (a kick, a snare hit) still shows, and the loudest bar is `ff`. The encoding is byte-for-byte WaveformSounds' own [`encodePeaks`](/extensions/sounds/api/#utils): each value clamped to `0..1`, scaled by 255 and rounded. At 128 bars that's 256 characters a sound (128 at 64). There is no `peakScale` in the output — it only applies to integer arrays, and hex needs none.
+
+**Which bar count.** A desktop-width row draws ~100–130 bars, so 128 keeps it sharp. Measured on 33 sample previews, a manifest entry is ~435 B raw / ~177 B gzipped at 128 bars, ~307 B / ~105 B at 64 — pass `--manifest-bars 64` when the manifest's size matters more than the desktop rows. WaveformSounds reads any bar count: it resamples to the row's width, and since 2.2.0 interpolates when the row has more bars than the peaks (before, 64 peaks across a wide row were drawn as flat steps).
 
 **Order.** Sounds are sorted by path, in natural order — `Loop 2` before `Loop 10`, folder by folder, case-insensitively.
 

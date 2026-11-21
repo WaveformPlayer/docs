@@ -79,12 +79,13 @@ Setting it in a theme that switches between light and dark? Point it at the same
 | `.ws-play` | A row's play / pause button. |
 | `.ws-title` | The title cell: `.ws-title-text` the name, `.ws-loop-mark` a loop's icon. |
 | `.ws-cells` / `.ws-cell` | The columns: `.ws-type`, `.ws-bpm`, `.ws-key`, `.ws-duration`. |
-| `.ws-wave` / `.ws-canvas` | The row waveform (`role="slider"`) and its canvas — `inline` layout only. |
+| `.ws-wave` / `.ws-canvas` | The row waveform and its canvas — `inline` layout only. Only the current row's is a `role="slider"`; the rest are `aria-hidden` (2.2.0+). |
 | `.ws-download` | A row's download link. |
 | `.ws-empty` / `.ws-clear` | The no-matches message and its Clear filters button. |
 | `.ws-more` | Show more. |
 | `.ws-engine` / `.ws-engine--strip` | The engine player's slot — hidden in `inline`, the docked player in `strip`. |
-| `.ws-sr` | Visually hidden text for screen readers. |
+| `.ws-sr` | Visually hidden text for screen readers — including each row's read-out (2.2.0+). |
+| `.ws-sprite` / `.ws-icon` | The list's hidden icon sprite (first in the markup, 2.2.0+) and an icon — an `<svg>` that `<use>`s a symbol in it, in `currentColor`. `.ws-icon-play` / `.ws-icon-pause` are the play button's two. |
 
 The engine is a regular `WaveformPlayer`, so its own [styling](/player/styling/) applies inside `.ws-engine` — set its colours through [`playerOptions`](/extensions/sounds/options/#engine).
 

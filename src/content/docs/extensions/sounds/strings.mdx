@@ -27,7 +27,7 @@ As markup, `data-strings` takes the same object as JSON:
      data-strings='{"count":"{count} geluiden","countOne":"1 geluid"}'></div>
 ```
 
-Placeholders in braces are filled in: `{title}` (the sound's title), `{count}` and `{total}` (and, in `seekValue`, `{time}` and `{duration}`). An unknown placeholder is left as written. The server renderer takes the same `strings` option, so server-rendered markup is translated too — pass the same object to the runtime.
+Placeholders in braces are filled in: `{title}` (the sound's title), `{count}` and `{total}` (and, in `seekValue`, `{time}` and `{duration}`; in the row read-out strings, `{bpm}`, `{key}`, `{duration}` and `{note}`). An unknown placeholder is left as written. The server renderer takes the same `strings` option, so server-rendered markup is translated too — pass the same object to the runtime.
 
 ## Every string
 
@@ -61,10 +61,10 @@ The defaults are `WaveformSounds.DEFAULT_STRINGS` (also a named export of the ma
 | `loopFilter` | `Loops or one-shots` | The Loops / One-shots control's accessible name. |
 | `loops` | `Loops` | Its Loops button. |
 | `oneShots` | `One-shots` | Its One-shots button (the All button uses `all`). |
-| `isLoop` | `Loop` | A loop's icon: its tooltip and screen-reader text. |
+| `isLoop` | `Loop` | A loop's icon tooltip, and the last part of a loop's [row read-out](#the-row-read-out). |
 | `play` | `Play {title}` | A row's play button label. |
 | `pause` | `Pause {title}` | A playing row's button label. |
-| `seek` | `Seek {title}` | A row waveform's label. |
+| `seek` | `Seek {title}` | The seek slider's label (the current sound's waveform — the only one that is a slider, 2.2.0+). |
 | `seekValue` | `{time} of {duration}` | The seek slider's spoken value (`aria-valuetext`, "0:12 of 0:30"). 2.1.0+. |
 | `download` | `Download {title}` | A row's download link label. |
 | `count` | `{count} sounds` | The count. |
@@ -77,9 +77,27 @@ The defaults are `WaveformSounds.DEFAULT_STRINGS` (also a named export of the ma
 | `playError` | `Could not play {title}` | Announced when a sound fails to load or play (a 404, an undecodable file, a dropped connection). 2.1.0+. |
 | `loadError` | `Could not load the sounds.` | Shown (`role="alert"`) where the list would be when it can't be built — the manifest 404s or isn't a manifest. Fallback content you put in the container stays instead. 2.1.0+. |
 | `noSounds` | `No sounds.` | An empty pack (nothing to filter, so no Clear button). 2.1.0+. |
+| `rowBpm` | `{bpm} BPM` | A row's BPM in its read-out. 2.2.0+. |
+| `rowKey` | `key {key}` | A row's key in its read-out; `{key}` is the spoken key (below). 2.2.0+. |
+| `rowDuration` | `{duration}` | A row's length in its read-out (`0:07`). 2.2.0+. |
+| `keyMajor` | `{note} major` | A major key, spoken. 2.2.0+. |
+| `keyMinor` | `{note} minor` | A minor key, spoken. 2.2.0+. |
+| `noteSharp` | `{note} sharp` | A sharp root, spoken (`F#` → "F sharp"). 2.2.0+. |
+| `noteFlat` | `{note} flat` | A flat root, spoken (`Bb` → "B flat"). 2.2.0+. |
+| `listSeparator` | `, ` | Between the parts of a row's read-out. 2.2.0+. |
+
+## The row read-out
+
+*2.2.0+.* A screen reader hears a row as one sentence — its visible cells are `aria-hidden`, and a hidden `.ws-sr` span (which the play button is `aria-describedby`) reads the columns the row shows, in order, with the values it has:
+
+```text
+Bass loops, 130 BPM, key B minor, 0:07, Loop
+```
+
+The type is said as written; the BPM is `rowBpm`; the key is `rowKey` around the key spoken in words — `keyMajor` / `keyMinor` around the root, the root's sharp or flat through `noteSharp` / `noteFlat` (so `F#m` is "key F sharp minor", not "F number m"); the length is `rowDuration`; a loop ends with `isLoop`; and the parts are joined with `listSeparator`. In `noteSharp` / `noteFlat`, `{note}` is the root's letter (`F`); in `keyMajor` / `keyMinor` it's the spoken root ("F sharp").
 
 <Aside type="note" title="Plurals">
 The count has exactly three forms — `countOne` when the list holds one sound, `count` for any other total, and `countFiltered` whenever a filter hides some (`1 of 300 sounds` included). Languages with more plural forms than that can't be expressed fully; pick the wording that reads best for the common case.
 </Aside>
 
-The types, titles and tags come from your data, so they're already in whatever language you wrote them in. Keys are shown in their short form (`Fm`, `C#`).
+The types, titles and tags come from your data, so they're already in whatever language you wrote them in. Keys are shown in their short form (`Fm`, `C#`) and spoken through the strings above.

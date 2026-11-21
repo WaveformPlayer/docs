@@ -9,7 +9,7 @@ import SoundsDemo from '~/components/SoundsDemo.astro';
 
 `WaveformSounds` is a searchable, filterable list of sounds for showcasing the previews inside a sample pack, preset bank or sound library. Each row is a sound with a mini waveform, its type, BPM, key and length; above the rows sit a search box, type chips, a key menu, a BPM range menu, a sort menu and a Loop toggle. Press a row and it plays; press ↓ while it plays and the next one plays — the way a sample browser auditions.
 
-It is built for hundreds of sounds, not a handful: **one** [WaveformPlayer](/player/options/) (self mode) is the audio engine for the whole list, and the rows are light — a button, some text and a small canvas drawn from low-resolution peaks only when it scrolls into view. 300 sounds is 300 rows, not 300 players.
+It is built for hundreds of sounds, not a handful: **one** [WaveformPlayer](/player/options/) (self mode) is the audio engine for the whole list, and the rows are light — a button, some text and a small canvas drawn from low-resolution peaks only when it scrolls into view — and since 2.2.0 a row is in the DOM only while it's shown. 300 sounds is a page of rows, not 300 players.
 
 Here's a real one, loaded from a manifest. Press a row, use the chips and the search, or focus a row and use the arrow keys:
 
@@ -18,7 +18,7 @@ Here's a real one, loaded from a manifest. Press a row, use the chips and the se
 That's one element — `<div data-waveform-sounds data-manifest="/audio/sounds.json">` — and a JSON file written by [`waveform-gen --manifest`](/extensions/gen/manifest/). This demo's sounds carry no BPM or key, so the BPM menu, the key menu and those sort orders simply don't appear: every control shows up only when the data gives it something to do.
 
 <Aside type="caution" title="Requires the core player">
-The list plays through `window.WaveformPlayer` (or the class you pass as [`playerClass`](/extensions/sounds/options/#engine)). Load `@arraypress/waveform-player` first: without it the list still renders, but nothing plays, and the first play logs `[WaveformSounds] @arraypress/waveform-player is required`. The player is a peer dependency (`^1.24.5`).
+The list plays through `window.WaveformPlayer` (or the class you pass as [`playerClass`](/extensions/sounds/options/#engine)). Load `@arraypress/waveform-player` first: without it the list still renders, but nothing plays, and the first play logs `[WaveformSounds] @arraypress/waveform-player is required`. The player is a peer dependency (`^2.0.0`).
 </Aside>
 
 ## Sounds or a playlist?
@@ -151,7 +151,7 @@ Importing (or loading) the main entry initialises every `[data-waveform-sounds]`
 
 The list takes its sounds from the first of these it finds:
 
-1. **Server-rendered rows** already inside the container (a `[data-ws-list]` element, as written by the [`/render` entry](/extensions/sounds/api/#server-rendering-render) or a framework wrapper). The runtime *adopts* that markup instead of rebuilding it.
+1. **Server-rendered markup** already inside the container (a `[data-ws-list]` element, as written by the [`/render` entry](/extensions/sounds/api/#server-rendering-render) or a framework wrapper). The runtime *adopts* that markup instead of rebuilding it, and reads the sounds from its `<script type="application/json" data-ws-sounds>` (2.2.0+; markup from 2.0 / 2.1, whose rows carry each sound as `data-*`, still works).
 2. **The `sounds` option** — an array. An empty array counts: it renders an empty list and the manifest is not fetched.
 3. **The `manifest` option** (`data-manifest`) — a URL fetched with `fetch()` when there are no `sounds`. A failed request is reported through `onError` / `waveformsounds:error`.
 
@@ -184,10 +184,10 @@ A bare array of sounds works too. `version` is informational. `peakScale` is the
 | `title` | `string` | Display name. Defaults to the file name, with its extension dropped and `_` turned into spaces. |
 | `type` | `string` | The kind of sound ("Drum loops", "Bass", "One-shots") — the type chips and the Type column. |
 | `bpm` | `number \| string` | Tempo. Enables the BPM range menu and sort, and lets a number in the search match it. Kept to two decimals; `0` or anything non-numeric is no BPM. |
-| `key` | `string` | Musical key in any common spelling — `"F minor"`, `"Fmin"`, `"f m"` → `Fm`; `"C# Major"`, `"C♯"` → `C#`. Shown and filtered in that short form; an unparseable key is kept as written. |
+| `key` | `string` | Musical key in any common spelling — `"F minor"`, `"Fmin"`, `"f m"` → `Fm`; `"C# Major"`, `"C♯"` → `C#`. Shown and filtered in that short form; an unparseable key is kept as written. Enharmonic spellings (A#m / Bbm) share one key-menu entry by default — see [Enharmonic keys](/extensions/sounds/features/#enharmonic-keys) (2.2.0+). |
 | `duration` | `number \| string` | Length: seconds (`8.02`) or `"m:ss"` / `"h:mm:ss"`. Shown as `m:ss`, or in tenths under a second (`0.4s`, 0.1.3+). |
 | `tags` | `string[] \| string` | Extra words the search matches. A string is split on commas. |
-| `peaks` | `string \| number[]` | Low-resolution peaks for the row waveform: an 8-bit hex string (two characters per bar, `00`–`ff`), the core's [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) (2.1.0+), or numbers `0..1`. Without them the row shows a flat line until it's played. |
+| `peaks` | `string \| number[]` | Low-resolution peaks for the row waveform: an 8-bit hex string (two characters per bar, `00`–`ff`), the core's [compact `wp1:` peaks](/player/waveform-data/#compact-peaks-wp1) (2.1.0+), or numbers `0..1`. Any length — `waveform-gen` writes 128 (3.1.0+; 64 before); the row resamples to its width, interpolating when it has more bars than peaks (2.2.0+). Without them the row shows a flat line until it's played. |
 | `waveform` | `string \| number[]` | Full-resolution peaks for the `strip` layout's docked player — a [`waveform-gen`](/extensions/gen/) `.json` URL or an array. |
 | `download` | `string` | An optional download link for this sound. Rows with one get a download button; rows without carry nothing. |
 | `loop` | `boolean` | `true` for a loop; anything else is a one-shot (the default). Loops get a loop icon, a list with both gets a Loops / One-shots filter, and the Loop toggle repeats only loops. 0.2.0+. See [Loops and one-shots](/extensions/sounds/features/#loops-and-one-shots). |
