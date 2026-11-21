@@ -93,6 +93,10 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
 
 ### Changed
 
+- **A peaks file's `duration` is used.** A `.json` sidecar written by
+  `waveform-gen --compact` carries the track's length; it now stands in as the
+  `duration` option when none is set, so a page using peaks files (rather than
+  inline peaks) also shows every length before any audio loads.
 - **External-mode play/pause/seek requests carry the track's `duration`**
   (`detail.duration`, null when unset), so a controller such as waveform-bar
   can show the length before the audio loads.
@@ -113,6 +117,9 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
 
 ### Fixed
 
+- **The seek slider announces 0:00 after a track ends.** The playhead and the
+  time readout went back to the start, but `aria-valuenow`/`aria-valuetext`
+  kept the final position, so screen readers heard "0:07 of 0:07" at 0:00.
 - **One copy of the player when both entry points are imported.** An app that
   imported the root (as waveform-bar, -playlist and -sounds users do) and
   `/no-autoinit` (as the framework components do) bundled the whole player
@@ -129,6 +136,14 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
   the animation-frame loop found no duration and stopped. It now restarts when
   the metadata arrives.
 
+### Deprecated
+
+- **The `data-color` and `data-theme` attributes** still work in 2.0 but log a
+  console warning (once per page) and will be removed in 3.0. Use
+  `data-waveform-color` and `data-color-preset`. They stay because pages that
+  load the player from a CDN with `@latest` upgrade to 2.0 without anyone
+  editing their markup.
+
 ### Removed
 
 - **The CommonJS builds** (`waveform-player.cjs` and
@@ -136,8 +151,6 @@ Generated from [`@arraypress/waveform-player`'s CHANGELOG](https://github.com/Wa
   `require('@arraypress/waveform-player')` still works: Node 22.12+ loads the
   ES module build through `require()`, and `engines` now says `>=22.12`. The
   `module` field is gone too; `exports` covers every current bundler.
-- **The `data-color` and `data-theme` attributes.** They were 1.x aliases. Use
-  `data-waveform-color` and `data-color-preset`.
 - **The `webkitAudioContext` fallback** for BPM detection. Every supported
   browser has `AudioContext`.
 - **The square-bar fallback for browsers without `roundRect`.** Every supported

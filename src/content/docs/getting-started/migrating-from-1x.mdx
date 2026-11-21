@@ -20,7 +20,6 @@ use the canonical `data-*` names and support current browsers, 2.0 is a drop-in
 upgrade. The people who must change something are:
 
 - framework users — the [16 wrapper packages became 4](#package-names);
-- anyone using the removed [`data-color` / `data-theme`](#removed) aliases;
 - anyone who must support Safari before 16.4, Chrome before 111 or Firefox
   before 114 ([requirements](#requirements));
 - code that imports a CommonJS build file or a `src/` path directly.
@@ -106,6 +105,26 @@ keep working with 1.x cores — see [Staying on 1.x](#staying-on-1x).
 | Svelte | 5.0+ (5.20+ for sounds) | **5.59+** |
 | Astro | 6 or 7 | **7.4+** |
 
+## Deprecated
+
+| Deprecated | Use instead |
+| --- | --- |
+| `data-color` | `data-waveform-color` (same values, including JSON gradient arrays) |
+| `data-theme` | `data-color-preset` |
+
+Both still work in 2.0, so pages that load the player from a CDN with `@latest`
+keep their colours without anyone editing them. Each logs one console warning
+per page, and they will be removed in 3.0, so update the markup when you can:
+
+```html
+<!-- before -->
+<div data-waveform-player data-url="/a.mp3" data-color="#a1a1aa" data-theme="dark"></div>
+<!-- after -->
+<div data-waveform-player data-url="/a.mp3" data-waveform-color="#a1a1aa" data-color-preset="dark"></div>
+```
+
+The `<waveform-player>` element (new in 2.0) doesn't accept them.
+
 ## Removed
 
 Every removal, and what to use instead.
@@ -114,18 +133,9 @@ Every removal, and what to use instead.
 
 | Removed | Use instead |
 | --- | --- |
-| `data-color` | `data-waveform-color` (same values, including JSON gradient arrays) |
-| `data-theme` | `data-color-preset` |
 | Singular style names `bar` / `block` / `dot` | `bars` / `blocks` / `dots`. (The singular names were already rejected by option checking in late 1.x, so this only removes dead code.) |
 | The container's `data-duration`, `data-download-url`, `data-download-name` on a **playlist** | Put them on each `[data-track]`. |
 | Astro `<WaveformPlayer lazy>`'s `data-waveform-player-lazy` attribute and inline observer script | `<WaveformPlayer lazy>` still works; it now sets the core's [`lazy`](/player/lazy-loading/). Change any CSS or script that targeted `[data-waveform-player-lazy]` to `[data-lazy="true"]`. |
-
-```html
-<!-- before -->
-<div data-waveform-player data-url="/a.mp3" data-color="#a1a1aa" data-theme="dark"></div>
-<!-- after -->
-<div data-waveform-player data-url="/a.mp3" data-waveform-color="#a1a1aa" data-color-preset="dark"></div>
-```
 
 ### Astro lazy
 
@@ -241,7 +251,7 @@ events as `onSeek` / `@seek` / `onseek` (and friends): see
 
 <Aside type="caution" title="`@latest` CDN pages upgrade by themselves">
 A page that loads `@latest` from a CDN gets 2.0 as soon as it is published.
-That is fine for most pages — but if yours uses `data-color` / `data-theme` or
-must run on browsers older than the [2.0 floor](#requirements), either update
-the markup or pin `@1` first.
+That is fine for most pages — markup keeps working, including the deprecated
+`data-color` / `data-theme` — but if yours must run on browsers older than the
+[2.0 floor](#requirements), pin `@1` first.
 </Aside>
